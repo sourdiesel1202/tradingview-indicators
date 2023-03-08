@@ -1,0 +1,135 @@
+//@version=5
+indicator("Money Printer Go BRRRRRR")
+// drawVerticalLine(offset,color) =>
+    // line.new(bar_index[offset], low-LineLength, bar_index[offset], high+LineLength, color=color.new(color.yellow, 50), width=3)
+// adx_lookback=input(4, "ADX Lookback")
+trend_lookback=input(1,"Trend Lookback")
+
+obv_percent = input(5, "OBV Percent")
+_adx = input(14,"ADX Value")
+[dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+// [prior_dmilpus, prior_dmineg, prior_adx] = ta.dmi(14, 14)
+prior_adx = adx[1]
+//[macdLine, signalLine, histLine] = ta.macd(close, fastInput, slowInput, 9)
+obv = ta.obv
+prior_obv = ta.obv[1]
+_dmiplus = input(20, "DMI+ Signal")
+_dmineg = input(17, "DMI- Signal")
+dmi_delta = input(17, "DMI Delta")
+dmi_rapid=input(5, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
+// is_sinking(_indicator, _lookback)=>
+calculate_macd_value() =>
+    slowlength = 26
+    fastLength = 12
+    MACDLength = 9
+    MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+    aMACD = ta.ema(MACD, MACDLength)
+    delta = MACD - aMACD
+
+    ema20 = ta.ema(close,20)
+    // ok so the idea here is- is the macd over  the ema (signal) line
+    _value =0.0
+    if MACD > ema20
+        if MACD > MACD[1]
+            _value :=0.25
+        else 
+            _value :=0.0
+
+    else 
+        if MACD < MACD[1]
+            _value :=-0.25
+        else 
+            _value := 0.0
+
+
+    _value
+calculate_obv_value()=>
+    _value=0.0
+    if obv > prior_obv or (obv < prior_obv and prior_obv/obv*100 < obv_percent)
+        _value:=0.25
+    
+    else if obv < prior_obv or (obv > prior_obv and obv/prior_obv*100 < obv_percent)
+        _value := -0.25
+    else
+        _value := 0
+    _value
+calculate_adx_value()=>
+    _value=0.0
+    if adx > adx[1]
+        _value:=0.25
+    else
+        sinking=true
+        for i =0 to trend_lookback 
+            if sinking    
+                if adx[i] > adx[i+1]
+                    sinking:=false 
+        // _sinking = sinking
+
+        if sinking 
+            _value:=0.0
+        else 
+            _value :=0.25
+    _value :=  dmilpus > dmineg ? 1*_value : -1*_value
+calculate_dmi_value()=>
+    _value=0.0
+    if dmilpus >= dmineg and dmilpus >= _dmiplus and dmilpus-dmineg > dmi_delta
+    //# check to see if dmi+ is trending down and dmi- is trending up
+    // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
+    //plot(1,color = color.green)
+        _value:=0.25
+        // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
+            // value:=0.5
+        
+
+    //case for rapid changes pointing to reversal
+        if dmilpus[1]-dmilpus > dmi_rapid
+            _value:=0.125
+    // if dmilpus
+    // if dmilpus-dmineg <= dmi_delta
+        // value:=0
+    // if dmilpus-dmineg < input(15, "DMI Delta")
+    //     value:=0.5
+    // else
+    //     value := 0.5
+    // []
+    if dmineg >= dmilpus and dmineg >= _dmineg and dmineg-dmilpus > dmi_delta
+        // if adx > prior_adx 
+        _value:=-0.25
+            // if  rsi >= input(60, "RSI High") 
+                // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
+            // else
+            //     value := -0.5
+        if dmineg[1]-dmineg > dmi_rapid
+            _value:=-0.125
+    _value
+value = 0.0
+value := value+calculate_dmi_value()
+value := value+calculate_obv_value()
+value := value + calculate_adx_value()
+value := value+calculate_macd_value()
+// rsi = ta.rsi(close, input(14, "RSI Length"))
+
+// ok so the basic idea here is as follows
+// BUY SIGNAL
+// 1. look at DMI first- if DMI+ has crossed over DMI- and the DMI+ value exceeds the DMI+ Signal (i.e. what is a strong trend for DMI+, 20? 25?)
+// if the DMI condition is met, we need to ensure that the direction of the trend is still valid. This is detailed in 2.
+// 2. to verify the direction of the trend, first look at ADX and OBV. If ADX is rising, we need to ensure OBV supports the trend. if OBV is rising, 
+// we can safely assume the trend is bullish. if OBV is sinking, this may not necessarily indicate a sell signal. In order to confirm the sell signal, we need to verify that the OBV is falling
+// by a configurable percentage (i.e. 1%, et). 
+
+    
+    // else
+    //     sinking= true
+    //     for i =0 to adx_lookback
+    //         if sinking    
+    //             if adx[i] > adx[i+1]
+    //                 sinking:=false 
+    //     if sinking 
+    //         value:=0
+    //     else 
+    //         value :=-0.5
+    //plot(-1,color = color.red)
+plot(0, color = color.purple)
+plot(value, color = color.blue)
+//pl//ot(signalLine, color = color.orange)
+
