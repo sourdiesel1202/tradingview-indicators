@@ -1,10 +1,19 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sourdiesel1202
+
+
 //@version=5
-indicator("Money Printer Go BRRRRRR")
+strategy("Money Printer Go BRRRRRR Backtest", overlay=true, margin_long=100, margin_short=100)
+//@version=5
+// indicator("Money Printer Go BRRRRRR")
 // drawVerticalLine(offset,color) =>
     // line.new(bar_index[offset], low-LineLength, bar_index[offset], high+LineLength, color=color.new(color.yellow, 50), width=3)
 // adx_lookback=input(4, "ADX Lookback")
-// trend_lookback=input(1,"Trend Lookback")
-
+//@version=5
+// indicator("Money Printer Go BRRRRRR")
+// drawVerticalLine(offset,color) =>
+    // line.new(bar_index[offset], low-LineLength, bar_index[offset], high+LineLength, color=color.new(color.yellow, 50), width=3)
+// adx_lookback=input(4, "ADX Lookback")
 // obv_percent = input(5, "OBV Percent")
 trend_lookback=input(1,"Trend Lookback")
 
@@ -160,35 +169,23 @@ plotchar(ema20, "MACD Signal Value", "", location = location.top)
 
 
 value = mpb_adx+mpb_dmi+mpb_macd+mpb_obv
-old_value = mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]
-// rsi = ta.rsi(close, input(14, "RSI Length"))
+old_value = value[1]//mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]
 
-// ok so the basic idea here is as follows
-// BUY SIGNAL
-// 1. look at DMI first- if DMI+ has crossed over DMI- and the DMI+ value exceeds the DMI+ Signal (i.e. what is a strong trend for DMI+, 20? 25?)
-// if the DMI condition is met, we need to ensure that the direction of the trend is still valid. This is detailed in 2.
-// 2. to verify the direction of the trend, first look at ADX and OBV. If ADX is rising, we need to ensure OBV supports the trend. if OBV is rising,
-// we can safely assume the trend is bullish. if OBV is sinking, this may not necessarily indicate a sell signal. In order to confirm the sell signal, we need to verify that the OBV is falling
-// by a configurable percentage (i.e. 1%, et).
+// longCondition = ta.crossover(ta.sma(close, 14), ta.sma(close, 28))
+// mpb = input.source("Money Printer Go BRRRRRR (Strategy)","MPB Historical")
+plotchar(value, "MPB Value", "", location = location.top)
+plotchar(old_value, "Old MPB value", "", location = location.top)
+if (value >= input(0.38, "Long Entry Value Over", "Ensure MPB value exceeds this value before entrying a long position") and old_value <= input(0.0, "Long Entry Prior Value Under", "Ensure prior MPB value is under this value before entering a long position") )// and previous_value < 0.25)
+    strategy.entry("Long", strategy.long, 10, comment = "Enter Long Position")
 
-
-
-    // else
-    //     sinking= true
-    //     for i =0 to adx_lookback
-    //         if sinking
-    //             if adx[i] > adx[i+1]
-    //                 sinking:=false
-    //     if sinking
-    //         value:=0
-    //     else
-    //         value :=-0.5
-    //plot(-1,color = color.red)
-// plot_color  = color.blue
-// if value > 0.12 and value < 0.35
-    // plot_color := color.green
-plot(0, color = color.purple)
-plot(1, color = color.purple)
-plot(-1, color = color.purple)
-plot(value, color = color.blue)
-//pl//ot(signalLine, color = color.orange)
+if value <= input(0.38, "Long Exit Value Under", "Ensure MPB value is under this value before exiting a long position") and old_value >= input(0.38, "Long Exit Prior Value Over", "Ensure prior MPB value is under this value before exiting a long position")
+    strategy.close("Long", qty_percent = 100,immediately = true , comment = "Exit Long Position")
+// if (current_value < 0.1 and previous_value > 0.1)
+    // st rategy.exit("Calls", profit = 0)
+// shortCondition = ta.crossunder(ta.sma(close, 14), ta.sma(close, 28))
+if (value <= input(-0.12, "Short Entry Value Under", "Ensure MPB value is under this value before entering a short position") and old_value >= input(-0.13, "Short Entry Prior Value Over", "Ensure prior MPB value is over this value before entering a short position") )//and previous_value > -0.25)
+    strategy.entry("Short", strategy.short,10, comment = "Enter Short Position")
+if value >= input(-0.38, "Short Exit Value Over", "Ensure MPB value is over this value before exiting a short position") and old_value  <=input(-0.38, "Short Entry Prior Value Under", "Ensure prior MPB value is under this value before exiting a short position")
+    strategy.close("Short",qty_percent = 100,immediately = true, comment = "Exit Short Position")
+// if (current_value > -0.1 and previous_value < -0.1)
+    // strategy.exit("Puts", profit = 0)
