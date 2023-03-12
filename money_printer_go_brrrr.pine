@@ -8,9 +8,9 @@ indicator("Money Printer Go BRRRRRR")
 // obv_percent = input(5, "OBV Percent")
 trend_lookback=input(1,"Trend Lookback")
 
-// obv_percent = input(5, "OBV Percent")
+obv_percent = input(1, "OBV Delta Percent", "The percentage between obv and obv[1], exceed this value to consider OBV trend strong")
 _adx = input(14,"ADX Value")
-
+// debug = input(true, "Debug", "Enable Logging")
 // [prior_dmilpus, prior_dmineg, prior_adx] = ta.dmi(14, 14)
 
 //[macdLine, signalLine, histLine] = ta.macd(close, fastInput, slowInput, 9)
@@ -18,8 +18,9 @@ _adx = input(14,"ADX Value")
 // prior_obv = ta.obv[1]
 _dmiplus = input(17, "DMI+ Signal")
 _dmineg = input(17, "DMI- Signal")
-dmi_delta = input(15, "DMI Delta")
+dmi_delta = input(10, "DMI Delta")
 dmi_rapid=input(5, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
+adx_rapid=input(0.5, "ADX Rapid Change", "The delta between ADX[1] and ADX. If this value is exceeded, flag reversal")
 // is_sinking(_indicator, _lookback)=>
 calculate_macd_value(prior=0) =>
     slowlength = 26
@@ -33,94 +34,210 @@ calculate_macd_value(prior=0) =>
     // aMACD = ta.ema(MACD[1], MACDLength)
     // delta = MACD - aMACD
     // signal=ta.ema(aMACD, MACDLength)
-    // ema20 = ta.ema(close,20)
+    ema20 = ta.ema(close,20)
     // ok so the idea here is- is the macd over  the ema (signal) line
     _value =0.0
     hist = macd -signal
-    if macd > signal
-        if macd > macd[1]
-            if hist[1] > hist
-                _value :=0.125
+    //ok so first, add our positive vs negative flag
+
+    if macd > signal //case for long position
+        if macd > macd[2] //if the general trend is up
+            if hist[1] < hist //so now we look at the histogram,
+                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+                    _value :=0.20
+                else
+                    _value :=0.12
+            else //otherwise we are
+                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+                    _value :=0.12
+                else
+                    _value :=0.05
+        else //otherwise, the general trend is down
+            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+                _value :=0.12
             else
-                _value :=0.25
-        else
-            _value :=0.125
+                _value :=0.0
 
     else
-        if macd < macd[1]
-            if hist[1] < hist
-                _value :=-0.125
+        if macd < macd[2] // gemeral trend is down
+            if hist[1] > hist //look at histogram
+                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                    _value :=-0.20
+                else
+                    _value :=-0.12
             else
-                _value :=-0.25
+                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                    _value :=-0.12
+                else
+                    _value:=-0.05
         else
-            _value := -0.125
+            // _value := -0.125
+            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                _value :=-0.12
+            else
+                _value :=0.0
+    //check for positive vs negative macd values
+    if macd > 0
+        _value := _value+0.05
+    else
+        _value := _value+-0.05
 
-
-    [_value,macd, signal]
+    //ok so if a crossover happened, take this as a strong trend
+    if macd > signal and macd[1] < signal[1]
+        _value:=0.25
+    if macd < signal and macd[1] > signal[1]
+        _value:=-0.25
+    [_value]
 calculate_obv_value(prior=0)=>
     obv = ta.obv
-
-    obv_avg= (obv+obv[1]+obv[2])/3
+    // obv = ta.obv
+    obv_delta= 0.0
+    // obv_delta_p
     _value = 0.0
-    if obv_avg <= obv
-        if obv < obv[1]
-            _value := 0.125
-        else
-            _value := 0.25
+    // _obv_percent = 0.0
+    delta_percent = 0.0
+    delta_percent_prior = 0.0
+    // multiplier = 1.0
+    if obv > 0
+        _value := _value+0.05
     else
-        if obv > obv[1]
-            _value := -0.125
+        _value := _value-0.05
+    obv_delta := obv-obv[1]
+    obv_delta_prior = obv[1]-obv[2]
+
+    if obv > obv[1]
+        delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+
+    else
+        delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+
+    if obv>obv[2]
+        delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+    else
+        delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+
+    if delta_percent > 0
+        if delta_percent > obv_percent
+            if obv > obv[2]
+                if delta_percent_prior > obv_percent
+                    _value :=0.245
+                else
+                    _value := 0.125
+            else
+                if delta_percent_prior > obv_percent
+                    _value :=-0.1245
+                else
+                    _value :=-0.05
+
         else
-            _value := -0.25
-    // else if obv_avg  <= obv[1]
-        // _value := -0.25
-    // else if obv_avg  < obv[1] and obv_avg > obv[2]
-        // _value :=0.125
-    // else if obv_avg  > obv[1] and obv_avg < obv[2]
-        // _value :=-0.125
-
-    [_value ]
-
-
-//change obv to calculate trend
-    // _value=0.0
-    // if obv > prior_obv or (obv < prior_obv and prior_obv/obv*100 < obv_percent)
-        // _value:=0.25
-
-    // else if obv < prior_obv or (obv > prior_obv and obv/prior_obv*100 < obv_percent)
-        // _value := -0.25
+            if delta_percent_prior > obv_percent
+                _value:=0.245
+            else
+                _value :=0.125
+    else
+        if delta_percent < (obv_percent*-1)
+            if obv < obv[2]
+                if delta_percent_prior < (obv_percent*-1)
+                    _value :=-0.245
+                else
+                    _value := 0.125
+            else
+                if delta_percent_prior < (obv_percent*-1)
+                    _value :=0.1245
+                else
+                    _value := 0.05
+        else
+            if delta_percent_prior < (obv_percent *-1)
+                _value :=-0.245
+            else
+                _value :=-0.125
+    // obv = ta.obv
+    // obv_delta= 0.0
+    // // obv_delta_p
+    // _value = 0.0
+    // // _obv_percent = 0.0
+    // delta_percent = 0.0
+    // // multiplier = 1.0
+    // if obv > 0
+    //     _value := _value+0.05
     // else
-        // _value := 0
-    // _value
+    //     _value := _value-0.05
+    // obv_delta := obv-obv[1]
+    // if obv > obv[1]
+    //     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+    // else
+    //     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+    // if delta_percent > 0
+    //     if delta_percent > obv_percent
+    //         if obv > obv[2]
+    //             _value :=0.245
+    //         else
+    //             _value :=-0.1245
+    //     else
+    //         _value:=0.05
+    // else
+    //     if delta_percent < (obv_percent*-1)
+    //         if obv < obv[2]
+    //             _value :=-0.245
+    //         else
+    //             _value :=0.1245
+    //     else
+    //         _value :=-0.05
+
+    [_value]
+
 calculate_adx_value(prior=0)=>
 // [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+
     _value=0.0
     if adx > adx[1]
         _value:=0.25
-    else
-        sinking=true
-        for i =0 to trend_lookback
-            if sinking
-                if adx[i+prior] > adx[i+1]
-                    sinking:=false
-        // _sinking = sinking
 
-        if sinking
-            _value:=0.0
+    else
+        if adx > adx[3]
+            _value:=0.125
+        if adx[1]-adx > adx_rapid
+            _value:=0
         else
-            _value :=0.125
+            _value:=0.125
+    // if adx > adx[1]
+    //     _value:=0.25
+    // else
+    //     sinking=true
+    //     for i =0 to trend_lookback
+    //         if sinking
+    //             if adx[i+prior] > adx[i+1]
+    //                 sinking:=false
+    //     // _sinking = sinking
+
+    //     if sinking
+    //         _value:=0.0
+    //     else
+    //         _value :=0.125
     _value :=  dmilpus > dmineg ? 1*_value : -1*_value
     // plotchar(_value, "MPB ADX Value", "", location = location.top)
     [_value]
 calculate_dmi_value()=>
     _value=0.0
     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
-    if dmilpus >= dmineg and dmilpus >= _dmiplus and dmilpus-dmineg > dmi_delta
+    if dmilpus >= dmineg and dmilpus >= _dmiplus
+        if dmilpus-dmineg > dmi_delta
+            if dmilpus > dmilpus[3]
+            // if dmilpus > dmilpus[1]
+                _value:=0.25
+            else
+                _value:=0.0 //flag reversal
+            // else
+
+                    // _value:=0.25
+                // else
+                    // _value:=0
     //# check to see if dmi+ is trending down and dmi- is trending up
     // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
-    //plot(1,color = color.green)
-        _value:=0.25
+        //plot(1,color = color.green)
+        else
+            _value:=0.0
         // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
             // value:=0.5
 
@@ -136,9 +253,18 @@ calculate_dmi_value()=>
     // else
     //     value := 0.5
     // []
-    if dmineg >= dmilpus and dmineg >= _dmineg and dmineg-dmilpus > dmi_delta
+    if dmineg >= dmilpus and dmineg >= _dmineg
+        if dmineg-dmilpus > dmi_delta
+            if dmineg > dmineg[3]
+                _value:=-0.25
+            else
+                // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
+                //     _value:=-0.25
+                // else
+                _value:=0
         // if adx > prior_adx
-        _value:=-0.25
+        else
+            _value:=0.0
             // if  rsi >= input(60, "RSI High")
                 // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
             // else
@@ -147,46 +273,170 @@ calculate_dmi_value()=>
             _value:=0
     [_value]
 // old_value = 0.0
+
+
+//
+// BEGIN DEBUG LOGGING
+// uncomment below lines for debug logging (show values in data window)
+//
+//OBV
+obv = ta.obv
+// obv = ta.obv
+obv_delta= 0.0
+// obv_delta_p
+_value = 0.0
+// _obv_percent = 0.0
+delta_percent = 0.0
+delta_percent_prior = 0.0
+// multiplier = 1.0
+if obv > 0
+    _value := _value+0.05
+else
+    _value := _value-0.05
+obv_delta := obv-obv[1]
+obv_delta_prior = obv[1]-obv[2]
+
+if obv > obv[1]
+    delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+
+else
+    delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+
+if obv>obv[2]
+    delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+else
+    delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+
+if delta_percent > 0
+    if delta_percent > obv_percent
+        if obv > obv[2]
+            if delta_percent_prior > obv_percent
+                _value :=0.245
+            else
+                _value := 0.125
+        else
+            if delta_percent_prior > obv_percent
+                _value :=-0.1245
+            else
+                _value :=-0.05
+
+    else
+        if delta_percent_prior > obv_percent
+            _value:=0.245
+        else
+            _value :=0.125
+else
+    if delta_percent < (obv_percent*-1)
+        if obv < obv[2]
+            if delta_percent_prior < (obv_percent*-1)
+                _value :=-0.245
+            else
+                _value := 0.125
+        else
+            if delta_percent_prior < (obv_percent*-1)
+                _value :=0.1245
+            else
+                _value := 0.05
+    else
+        if delta_percent_prior < (obv_percent *-1)
+            _value :=-0.245
+        else
+            _value :=-0.125
+plotchar(_value, "MPB OBV Value (Debug)", "", location = location.top)
+
+plotchar(obv, "OBV Value", "", location = location.top)
+plotchar(obv[1], "OBV[1] Value", "", location = location.top)
+plotchar(obv_delta, "OBV Delta", "", location = location.top)
+plotchar(delta_percent, "OBV Delta Percent", "", location = location.top)
+plotchar(delta_percent_prior, "OBV Delta Percent Prior", "", location = location.top)
+
+
+//MACD DEBUG
+slowlength = 26
+fastLength = 12
+MACDLength = 9
+fast_ma = ta.ema(close, fastLength)
+slow_ma = ta.ema(close, slowlength)
+macd = fast_ma - slow_ma
+signal = ta.ema(macd, MACDLength)
+// MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+// aMACD = ta.ema(MACD[1], MACDLength)
+// delta = MACD - aMACD
+// signal=ta.ema(aMACD, MACDLength)
+ema20 = ta.ema(close,20)
+// ok so the idea here is- is the macd over  the ema (signal) line
+_value :=0.0
+hist = macd -signal
+//ok so first, add our positive vs negative flag
+
+if macd > signal //case for long position
+    if macd > macd[2] //if the general trend is up
+        if hist[1] < hist //so now we look at the histogram,
+            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+                _value :=0.20
+            else
+                _value :=0.12
+        else //otherwise we are
+            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+                _value :=0.12
+            else
+                _value :=0.05
+    else //otherwise, the general trend is down
+        if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+            _value :=0.12
+        else
+            _value :=0.0
+
+else
+    if macd < macd[2] // gemeral trend is down
+        if hist[1] > hist //look at histogram
+            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                _value :=-0.20
+            else
+                _value :=-0.12
+        else
+            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                _value :=-0.12
+            else
+                _value:=-0.05
+    else
+        // _value := -0.125
+        if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+            _value :=-0.12
+        else
+            _value :=0.0
+//check for positive vs negative macd values
+if macd > 0
+    _value := _value+0.05
+else
+    _value := _value+-0.05
+
+//ok so if a crossover happened, take this as a strong trend
+if macd > signal and macd[1] < signal[1]
+    _value:=0.25
+if macd < signal and macd[1] > signal[1]
+    _value:=-0.25
+
+plotchar(hist, "MACD Histogram Value", "", location = location.top)
+plotchar(macd, "MACD Value", "", location = location.top)
+plotchar(_value, "MPB MACD Value (Debug) ", "", location = location.top)
+plotchar(signal, "MACD Signal Value", "", location = location.top)
+
 [mpb_dmi] = calculate_dmi_value()
 [mpb_adx] = calculate_adx_value()
-[mpb_macd, macd, ema20]=calculate_macd_value()
+[mpb_macd]=calculate_macd_value()
 [mpb_obv]= calculate_obv_value()
+// if debug
 plotchar(mpb_macd, "MPB MACD Value", "", location = location.top)
 plotchar(mpb_obv, "MPB OBV Value", "", location = location.top)
 plotchar(mpb_adx, "MPB ADX Value", "", location = location.top)
 plotchar(mpb_dmi, "MPB DMI Value", "", location = location.top)
-plotchar(macd, "MACD Value", "", location = location.top)
-plotchar(ema20, "MACD Signal Value", "", location = location.top)
-
+// obv = ta.obv
 
 value = mpb_adx+mpb_dmi+mpb_macd+mpb_obv
 old_value = mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]
-// rsi = ta.rsi(close, input(14, "RSI Length"))
-
-// ok so the basic idea here is as follows
-// BUY SIGNAL
-// 1. look at DMI first- if DMI+ has crossed over DMI- and the DMI+ value exceeds the DMI+ Signal (i.e. what is a strong trend for DMI+, 20? 25?)
-// if the DMI condition is met, we need to ensure that the direction of the trend is still valid. This is detailed in 2.
-// 2. to verify the direction of the trend, first look at ADX and OBV. If ADX is rising, we need to ensure OBV supports the trend. if OBV is rising,
-// we can safely assume the trend is bullish. if OBV is sinking, this may not necessarily indicate a sell signal. In order to confirm the sell signal, we need to verify that the OBV is falling
-// by a configurable percentage (i.e. 1%, et).
 
 
-
-    // else
-    //     sinking= true
-    //     for i =0 to adx_lookback
-    //         if sinking
-    //             if adx[i] > adx[i+1]
-    //                 sinking:=false
-    //     if sinking
-    //         value:=0
-    //     else
-    //         value :=-0.5
-    //plot(-1,color = color.red)
-// plot_color  = color.blue
-// if value > 0.12 and value < 0.35
-    // plot_color := color.green
 plot(0, color = color.purple)
 plot(1, color = color.purple)
 plot(-1, color = color.purple)
