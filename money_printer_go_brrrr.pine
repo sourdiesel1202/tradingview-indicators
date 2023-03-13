@@ -8,7 +8,7 @@ indicator("Money Printer Go BRRRRRR")
 // obv_percent = input(5, "OBV Percent")
 trend_lookback=input(1,"Trend Lookback")
 
-obv_percent = input(1, "OBV Delta Percent", "The percentage between obv and obv[1], exceed this value to consider OBV trend strong")
+obv_percent = input(0.01, "OBV Delta Percent", "The percentage between obv and obv[1], exceed this value to consider OBV trend strong")
 _adx = input(14,"ADX Value")
 // debug = input(true, "Debug", "Enable Logging")
 // [prior_dmilpus, prior_dmineg, prior_adx] = ta.dmi(14, 14)
@@ -18,8 +18,8 @@ _adx = input(14,"ADX Value")
 // prior_obv = ta.obv[1]
 _dmiplus = input(17, "DMI+ Signal")
 _dmineg = input(17, "DMI- Signal")
-dmi_delta = input(10, "DMI Delta")
-dmi_rapid=input(5, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
+dmi_delta = input(1, "DMI Delta")
+dmi_rapid=input(7, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
 adx_rapid=input(0.5, "ADX Rapid Change", "The delta between ADX[1] and ADX. If this value is exceeded, flag reversal")
 // is_sinking(_indicator, _lookback)=>
 calculate_macd_value(prior=0) =>
@@ -188,19 +188,32 @@ calculate_obv_value(prior=0)=>
 
 calculate_adx_value(prior=0)=>
 // [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
 
     _value=0.0
-    if adx > adx[1]
-        _value:=0.25
-
-    else
-        if adx > adx[3]
-            _value:=0.125
-        if adx[1]-adx > adx_rapid
-            _value:=0
+    if adx > adx[2] //we know trend is strong
+        if adx > 20
+            _value :=0.25
         else
-            _value:=0.125
+            _value := 0.175
+    else
+        _value := -0.125
+
+    // if dmineg > dmilpus
+        // _value := _value *-1
+
+
+
+    // if adx > adx[1]
+    //     _value:=0.25
+
+    // else
+    //     if adx > adx[2]
+    //         _value:=0.125
+    //     if adx[1]-adx > adx_rapid
+    //         _value:=0
+    //     else
+    //         _value:=0.125
     // if adx > adx[1]
     //     _value:=0.25
     // else
@@ -216,18 +229,19 @@ calculate_adx_value(prior=0)=>
     //     else
     //         _value :=0.125
     _value :=  dmilpus > dmineg ? 1*_value : -1*_value
+
     // plotchar(_value, "MPB ADX Value", "", location = location.top)
     [_value]
 calculate_dmi_value()=>
     _value=0.0
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
     if dmilpus >= dmineg and dmilpus >= _dmiplus
         if dmilpus-dmineg > dmi_delta
-            if dmilpus > dmilpus[3]
+            if dmilpus > dmilpus[2]
             // if dmilpus > dmilpus[1]
-                _value:=0.25
+                _value:=0.175
             else
-                _value:=0.0 //flag reversal
+                _value:=0.05 //flag reversal
             // else
 
                     // _value:=0.25
@@ -237,7 +251,7 @@ calculate_dmi_value()=>
     // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
         //plot(1,color = color.green)
         else
-            _value:=0.0
+            _value:=0.125
         // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
             // value:=0.5
 
@@ -245,6 +259,8 @@ calculate_dmi_value()=>
     //case for rapid changes pointing to reversal
         if dmilpus[1]-dmilpus > dmi_rapid
             _value:=0
+        if dmineg[1] > dmilpus[1]
+            _value:=0.175
     // if dmilpus
     // if dmilpus-dmineg <= dmi_delta
         // value:=0
@@ -255,22 +271,31 @@ calculate_dmi_value()=>
     // []
     if dmineg >= dmilpus and dmineg >= _dmineg
         if dmineg-dmilpus > dmi_delta
-            if dmineg > dmineg[3]
-                _value:=-0.25
+            if dmineg > dmineg[2]
+                _value:=-0.175
             else
                 // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
                 //     _value:=-0.25
                 // else
-                _value:=0
+                _value:=-0.05
         // if adx > prior_adx
         else
-            _value:=0.0
+            _value:=-0.125
             // if  rsi >= input(60, "RSI High")
                 // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
             // else
             //     value := -0.5
         if dmineg[1]-dmineg > dmi_rapid
             _value:=0
+
+        if dmineg[1] < dmilpus[1]
+            _value:=-0.175
+
+
+    if dmilpus > dmineg and dmilpus > adx
+        _value := _value +0.075
+    if dmineg > dmilpus and dmineg > adx
+        _value := _value -0.075
     [_value]
 // old_value = 0.0
 
@@ -441,4 +466,9 @@ plot(0, color = color.purple)
 plot(1, color = color.purple)
 plot(-1, color = color.purple)
 plot(value, color = color.blue)
+// plot(mpb_macd, color = color.yellow)
+plot(mpb_adx, color = color.white)
+plot(mpb_obv, color = color.green)
+// plot(mpb_dmi, color = color.white)
+// plot(mpb_adx, color = color.yellow)
 //pl//ot(signalLine, color = color.orange)
