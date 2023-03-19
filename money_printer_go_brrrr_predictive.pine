@@ -1,5 +1,6 @@
 //@version=5
 indicator(title="Money Printer Go BRRRRRR Predictive", overlay=true)
+import sourdiesel1202/MPB/2 as mpb
 // drawVerticalLine(offset,color) =>
     // line.new(bar_index[offset], low-LineLength, bar_index[offset], high+LineLength, color=color.new(color.yellow, 50), width=3)
 // adx_lookback=input(4, "ADX Lookback")
@@ -60,269 +61,269 @@ calculate_prediction(_mpb_adx, _mpb_obv, _mpb_dm, _mpb_macd, prior_bars ) =>
 
     [ first_pred_high,first_pred_mid, first_pred_low, second_pred_high, second_pred_mid, second_pred_low, third_pred_high, third_pred_mid, third_pred_low]
 
-calculate_macd_value(prior=0) =>
-    slowlength = 26
-    fastLength = 12
-    MACDLength = 9
-    fast_ma = ta.ema(close, fastLength)
-    slow_ma = ta.ema(close, slowlength)
-    macd = fast_ma - slow_ma
-    signal = ta.ema(macd, MACDLength)
-    // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
-    // aMACD = ta.ema(MACD[1], MACDLength)
-    // delta = MACD - aMACD
-    // signal=ta.ema(aMACD, MACDLength)
-    ema20 = ta.ema(close,20)
-    // ok so the idea here is- is the macd over  the ema (signal) line
-    _value =0.0
-    hist = macd -signal
-    //ok so first, add our positive vs negative flag
+// calculate_macd_value(prior=0) =>
+//     slowlength = 26
+//     fastLength = 12
+//     MACDLength = 9
+//     fast_ma = ta.ema(close, fastLength)
+//     slow_ma = ta.ema(close, slowlength)
+//     macd = fast_ma - slow_ma
+//     signal = ta.ema(macd, MACDLength)
+//     // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+//     // aMACD = ta.ema(MACD[1], MACDLength)
+//     // delta = MACD - aMACD
+//     // signal=ta.ema(aMACD, MACDLength)
+//     ema20 = ta.ema(close,20)
+//     // ok so the idea here is- is the macd over  the ema (signal) line
+//     _value =0.0
+//     hist = macd -signal
+//     //ok so first, add our positive vs negative flag
 
-    if macd > signal //case for long position
-        if macd > macd[2] //if the general trend is up
-            if hist[1] < hist //so now we look at the histogram,
-                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
-                    _value :=0.20
-                else
-                    _value :=0.12
-            else //otherwise we are
-                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-                    _value :=0.12
-                else
-                    _value :=0.05
-        else //otherwise, the general trend is down
-            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-                _value :=0.12
-            else
-                _value :=0.0
+//     if macd > signal //case for long position
+//         if macd > macd[2] //if the general trend is up
+//             if hist[1] < hist //so now we look at the histogram,
+//                 if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+//                     _value :=0.20
+//                 else
+//                     _value :=0.12
+//             else //otherwise we are
+//                 if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//                     _value :=0.12
+//                 else
+//                     _value :=0.05
+//         else //otherwise, the general trend is down
+//             if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//                 _value :=0.12
+//             else
+//                 _value :=0.0
 
-    else
-        if macd < macd[2] // gemeral trend is down
-            if hist[1] > hist //look at histogram
-                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                    _value :=-0.20
-                else
-                    _value :=-0.12
-            else
-                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                    _value :=-0.12
-                else
-                    _value:=-0.05
-        else
-            // _value := -0.125
-            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                _value :=-0.12
-            else
-                _value :=0.0
-    //check for positive vs negative macd values
-    if macd > 0
-        _value := _value+0.05
-    else
-        _value := _value+-0.05
+//     else
+//         if macd < macd[2] // gemeral trend is down
+//             if hist[1] > hist //look at histogram
+//                 if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                     _value :=-0.20
+//                 else
+//                     _value :=-0.12
+//             else
+//                 if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                     _value :=-0.12
+//                 else
+//                     _value:=-0.05
+//         else
+//             // _value := -0.125
+//             if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                 _value :=-0.12
+//             else
+//                 _value :=0.0
+//     //check for positive vs negative macd values
+//     if macd > 0
+//         _value := _value+0.05
+//     else
+//         _value := _value+-0.05
 
-    //ok so if a crossover happened, take this as a strong trend
-    if macd > signal and macd[1] < signal[1]
-        _value:=0.25
-    if macd < signal and macd[1] > signal[1]
-        _value:=-0.25
-    [_value]
-calculate_obv_value(prior=0)=>
-    obv = ta.obv
-    // obv = ta.obv
-    obv_delta= 0.0
-    // obv_delta_p
-    _value = 0.0
-    // _obv_percent = 0.0
-    delta_percent = 0.0
-    delta_percent_prior = 0.0
-    // multiplier = 1.0
-    if obv > 0
-        _value := _value+0.05
-    else
-        _value := _value-0.05
-    obv_delta := obv-obv[1]
-    obv_delta_prior = obv[1]-obv[2]
+//     //ok so if a crossover happened, take this as a strong trend
+//     if macd > signal and macd[1] < signal[1]
+//         _value:=0.25
+//     if macd < signal and macd[1] > signal[1]
+//         _value:=-0.25
+//     [_value]
+// calculate_obv_value(prior=0)=>
+//     obv = ta.obv
+//     // obv = ta.obv
+//     obv_delta= 0.0
+//     // obv_delta_p
+//     _value = 0.0
+//     // _obv_percent = 0.0
+//     delta_percent = 0.0
+//     delta_percent_prior = 0.0
+//     // multiplier = 1.0
+//     if obv > 0
+//         _value := _value+0.05
+//     else
+//         _value := _value-0.05
+//     obv_delta := obv-obv[1]
+//     obv_delta_prior = obv[1]-obv[2]
 
-    if obv > obv[1]
-        delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+//     if obv > obv[1]
+//         delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
 
-    else
-        delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+//     else
+//         delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
 
-    if obv>obv[2]
-        delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
-    else
-        delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+//     if obv>obv[2]
+//         delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+//     else
+//         delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
 
-    if delta_percent > 0
-        if delta_percent > obv_percent
-            if obv > obv[2]
-                if delta_percent_prior > obv_percent
-                    _value :=0.245
-                else
-                    _value := 0.125
-            else
-                if delta_percent_prior > obv_percent
-                    _value :=-0.1245
-                else
-                    _value :=-0.05
+//     if delta_percent > 0
+//         if delta_percent > obv_percent
+//             if obv > obv[2]
+//                 if delta_percent_prior > obv_percent
+//                     _value :=0.245
+//                 else
+//                     _value := 0.125
+//             else
+//                 if delta_percent_prior > obv_percent
+//                     _value :=-0.1245
+//                 else
+//                     _value :=-0.05
 
-        else
-            if delta_percent_prior > obv_percent
-                _value:=0.245
-            else
-                _value :=0.125
-    else
-        if delta_percent < (obv_percent*-1)
-            if obv < obv[2]
-                if delta_percent_prior < (obv_percent*-1)
-                    _value :=-0.245
-                else
-                    _value := 0.125
-            else
-                if delta_percent_prior < (obv_percent*-1)
-                    _value :=0.1245
-                else
-                    _value := 0.05
-        else
-            if delta_percent_prior < (obv_percent *-1)
-                _value :=-0.245
-            else
-                _value :=-0.125
-    // obv = ta.obv
-    // obv_delta= 0.0
-    // // obv_delta_p
-    // _value = 0.0
-    // // _obv_percent = 0.0
-    // delta_percent = 0.0
-    // // multiplier = 1.0
-    // if obv > 0
-    //     _value := _value+0.05
-    // else
-    //     _value := _value-0.05
-    // obv_delta := obv-obv[1]
-    // if obv > obv[1]
-    //     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
-    // else
-    //     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
-    // if delta_percent > 0
-    //     if delta_percent > obv_percent
-    //         if obv > obv[2]
-    //             _value :=0.245
-    //         else
-    //             _value :=-0.1245
-    //     else
-    //         _value:=0.05
-    // else
-    //     if delta_percent < (obv_percent*-1)
-    //         if obv < obv[2]
-    //             _value :=-0.245
-    //         else
-    //             _value :=0.1245
-    //     else
-    //         _value :=-0.05
+//         else
+//             if delta_percent_prior > obv_percent
+//                 _value:=0.245
+//             else
+//                 _value :=0.125
+//     else
+//         if delta_percent < (obv_percent*-1)
+//             if obv < obv[2]
+//                 if delta_percent_prior < (obv_percent*-1)
+//                     _value :=-0.245
+//                 else
+//                     _value := 0.125
+//             else
+//                 if delta_percent_prior < (obv_percent*-1)
+//                     _value :=0.1245
+//                 else
+//                     _value := 0.05
+//         else
+//             if delta_percent_prior < (obv_percent *-1)
+//                 _value :=-0.245
+//             else
+//                 _value :=-0.125
+//     // obv = ta.obv
+//     // obv_delta= 0.0
+//     // // obv_delta_p
+//     // _value = 0.0
+//     // // _obv_percent = 0.0
+//     // delta_percent = 0.0
+//     // // multiplier = 1.0
+//     // if obv > 0
+//     //     _value := _value+0.05
+//     // else
+//     //     _value := _value-0.05
+//     // obv_delta := obv-obv[1]
+//     // if obv > obv[1]
+//     //     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+//     // else
+//     //     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+//     // if delta_percent > 0
+//     //     if delta_percent > obv_percent
+//     //         if obv > obv[2]
+//     //             _value :=0.245
+//     //         else
+//     //             _value :=-0.1245
+//     //     else
+//     //         _value:=0.05
+//     // else
+//     //     if delta_percent < (obv_percent*-1)
+//     //         if obv < obv[2]
+//     //             _value :=-0.245
+//     //         else
+//     //             _value :=0.1245
+//     //     else
+//     //         _value :=-0.05
 
-    [_value]
+//     [_value]
 
-calculate_adx_value(prior=0)=>
-// [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
+// calculate_adx_value(prior=0)=>
+// // [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+//     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
 
-    _value=0.0
-    if adx > adx[2] //we know trend is strong
-        if adx > 20
-            _value :=0.25
-        else
-            _value := 0.175
-    else
-        _value := -0.175
+//     _value=0.0
+//     if adx > adx[2] //we know trend is strong
+//         if adx > 20
+//             _value :=0.25
+//         else
+//             _value := 0.175
+//     else
+//         _value := -0.175
 
-    // if dmineg > dmilpus
-        // _value := _value *-1
-
-
-
-    // if adx > adx[1]
-    //     _value:=0.25
-
-    // else
-    //     if adx > adx[2]
-    //         _value:=0.125
-    //     if adx[1]-adx > adx_rapid
-    //         _value:=0
-    //     else
-    //         _value:=0.125
-    // if adx > adx[1]
-    //     _value:=0.25
-    // else
-    //     sinking=true
-    //     for i =0 to trend_lookback
-    //         if sinking
-    //             if adx[i+prior] > adx[i+1]
-    //                 sinking:=false
-    //     // _sinking = sinking
-
-    //     if sinking
-    //         _value:=0.0
-    //     else
-    //         _value :=0.125
-    _value :=  dmilpus > dmineg ? 1*_value : -1*_value
-    // plotchar(_value, "MPB ADX Value", "", location = location.top)
-    [_value]
-calculate_dmi_value()=>
-    _value=0.0
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
-    if dmilpus >= dmineg and dmilpus >= _dmiplus
-        if dmilpus-dmineg > dmi_delta
-            if dmilpus > dmilpus[2]
-            // if dmilpus > dmilpus[1]
-                _value:=0.25
-            else
-                _value:=0.0 //flag reversal
-            // else
-
-                    // _value:=0.25
-                // else
-                    // _value:=0
-    //# check to see if dmi+ is trending down and dmi- is trending up
-    // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
-        //plot(1,color = color.green)
-        else
-            _value:=0.125
-        // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
-            // value:=0.5
+//     // if dmineg > dmilpus
+//         // _value := _value *-1
 
 
-    //case for rapid changes pointing to reversal
-        if dmilpus[1]-dmilpus > dmi_rapid
-            _value:=0
-    // if dmilpus
-    // if dmilpus-dmineg <= dmi_delta
-        // value:=0
-    // if dmilpus-dmineg < input(15, "DMI Delta")
-    //     value:=0.5
-    // else
-    //     value := 0.5
-    // []
-    if dmineg >= dmilpus and dmineg >= _dmineg
-        if dmineg-dmilpus > dmi_delta
-            if dmineg > dmineg[2]
-                _value:=-0.25
-            else
-                // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
-                //     _value:=-0.25
-                // else
-                _value:=0
-        // if adx > prior_adx
-        else
-            _value:=-0.125
-            // if  rsi >= input(60, "RSI High")
-                // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
-            // else
-            //     value := -0.5
-        if dmineg[1]-dmineg > dmi_rapid
-            _value:=0
-    [_value]
+
+//     // if adx > adx[1]
+//     //     _value:=0.25
+
+//     // else
+//     //     if adx > adx[2]
+//     //         _value:=0.125
+//     //     if adx[1]-adx > adx_rapid
+//     //         _value:=0
+//     //     else
+//     //         _value:=0.125
+//     // if adx > adx[1]
+//     //     _value:=0.25
+//     // else
+//     //     sinking=true
+//     //     for i =0 to trend_lookback
+//     //         if sinking
+//     //             if adx[i+prior] > adx[i+1]
+//     //                 sinking:=false
+//     //     // _sinking = sinking
+
+//     //     if sinking
+//     //         _value:=0.0
+//     //     else
+//     //         _value :=0.125
+//     _value :=  dmilpus > dmineg ? 1*_value : -1*_value
+//     // plotchar(_value, "MPB ADX Value", "", location = location.top)
+//     [_value]
+// calculate_dmi_value()=>
+//     _value=0.0
+//     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+//     if dmilpus >= dmineg and dmilpus >= _dmiplus
+//         if dmilpus-dmineg > dmi_delta
+//             if dmilpus > dmilpus[2]
+//             // if dmilpus > dmilpus[1]
+//                 _value:=0.25
+//             else
+//                 _value:=0.0 //flag reversal
+//             // else
+
+//                     // _value:=0.25
+//                 // else
+//                     // _value:=0
+//     //# check to see if dmi+ is trending down and dmi- is trending up
+//     // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
+//         //plot(1,color = color.green)
+//         else
+//             _value:=0.125
+//         // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
+//             // value:=0.5
+
+
+//     //case for rapid changes pointing to reversal
+//         if dmilpus[1]-dmilpus > dmi_rapid
+//             _value:=0
+//     // if dmilpus
+//     // if dmilpus-dmineg <= dmi_delta
+//         // value:=0
+//     // if dmilpus-dmineg < input(15, "DMI Delta")
+//     //     value:=0.5
+//     // else
+//     //     value := 0.5
+//     // []
+//     if dmineg >= dmilpus and dmineg >= _dmineg
+//         if dmineg-dmilpus > dmi_delta
+//             if dmineg > dmineg[2]
+//                 _value:=-0.25
+//             else
+//                 // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
+//                 //     _value:=-0.25
+//                 // else
+//                 _value:=0
+//         // if adx > prior_adx
+//         else
+//             _value:=-0.125
+//             // if  rsi >= input(60, "RSI High")
+//                 // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
+//             // else
+//             //     value := -0.5
+//         if dmineg[1]-dmineg > dmi_rapid
+//             _value:=0
+//     [_value]
 
 
 // old_value = 0.0
@@ -334,17 +335,99 @@ calculate_dmi_value()=>
 // //
 
 // first_pred_high =
+// calculate_entry_and_exit(direction = strategy.long) =>
+    // average_delta = 0.0
+    // if direction == strategy.long
+    //     //get the average delta between close and low
+    //     for i=0 to 3
+    //         average_delta += close[i]-low[i]
+    //     //now that we have the average delta, we can
+    //first
+//ok so the basic idea
+//todo write entry and exit logic
+// average_delta = 0.0
+// long =true
+// if long
+//     //get the average delta between close and low
+//     for i=0 to 3
+//         average_delta += close[i]-low[i]
+//     //now that we have the average delta, we can
+[mpb_dmi] = mpb.calculate_dmi_value(dmi_delta,_dmiplus, _dmineg,dmi_rapid)
+[mpb_adx] = mpb.calculate_adx_value()
+[mpb_macd]=mpb.calculate_macd_value()
+[mpb_obv]= mpb.calculate_obv_value(0.01)
 
-[mpb_dmi] = calculate_dmi_value()
-[mpb_adx] = calculate_adx_value()
-[mpb_macd]=calculate_macd_value()
-[mpb_obv]= calculate_obv_value()
-// if debug
-// plotchar(mpb_macd, "MPB MACD Value", "", location = location.top)
-// plotchar(mpb_obv, "MPB OBV Value", "", location = location.top)
-// plotchar(mpb_adx, "MPB ADX Value", "", location = location.top)
-// plotchar(mpb_dmi, "MPB DMI Value", "", location = location.top)
-// obv = ta.obv
+//ok so what I want to do there is find the last time the mpb values were what they are now
+//from there we need to look at what happened next
+bars_to_prior_mpb =0
+matching_bars = array.new_int()
+for i =1 to 4950
+    // value[i]
+    mpb_adx+mpb_dmi+mpb_macd+mpb_obv
+    mpb_adx[i]+mpb_dmi[i]+mpb_macd[i]+mpb_obv[i]
+    mpb_adx[i+1]+mpb_dmi[i+1]+mpb_macd[i+1]+mpb_obv[i+1]
+    mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2]
+    mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]
+    mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2]
+    //  if (mpb_adx+mpb_dmi+mpb_macd+mpb_obv) == (mpb_adx+mpb_dmi+mpb_macd[i]+mpb_obv[i])
+
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] ) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1])
+    // if (mpb_adx[i]+mpb_dmi[i]+mpb_macd[i]+mpb_obv[i])==(mpb_adx+mpb_dmi+mpb_macd+mpb_obv) and (mpb_adx[i+1]+mpb_dmi[i+1]+mpb_macd[i+1]+mpb_obv[i+1])==(mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]) //and (mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2])==(mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2])
+    // if (mpb_adx[i]+mpb_dmi[i]+mpb_macd[i]+mpb_obv[i])==(mpb_adx+mpb_dmi+mpb_macd+mpb_obv) and (mpb_adx[i+1]+mpb_dmi[i+1]+mpb_macd[i+1]+mpb_obv[i+1])==(mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]) and (mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2])==(mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2])
+    if (mpb_adx[i]+mpb_dmi[i]+mpb_macd[i]+mpb_obv[i])==(mpb_adx+mpb_dmi+mpb_macd+mpb_obv) and (mpb_adx[i+1]+mpb_dmi[i+1]+mpb_macd[i+1]+mpb_obv[i+1])==(mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]) //and (mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2])==(mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] ) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1])
+    // if ((mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] ) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1])) or ((mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2])==(mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2]))
+    // if  ((mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[2]+mpb_dmi[2]+mpb_macd[2]+mpb_obv[2])==(mpb_adx[i+2]+mpb_dmi[i+2]+mpb_macd[i+2]+mpb_obv[i+2]))
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1]  ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] ) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1] and mpb_dmi[i+2]==mpb_dmi[2] ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1] and mpb_adx[i+2] == mpb_adx[2]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] and mpb_macd[i+2]==mpb_macd[2]) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1] and mpb_obv[i+2]==mpb_obv[2])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1] and mpb_dmi[i+2]==mpb_dmi[2] ) and  (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] and mpb_macd[i+2]==mpb_macd[2]) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1] and mpb_obv[i+2]==mpb_obv[2])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1] and mpb_dmi[i+2]==mpb_dmi[2] ) and  (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] and mpb_macd[i+2]==mpb_macd[2]) and (mpb_obv[i]==mpb_obv and mpb_obv[i+1]==mpb_obv[1] and mpb_obv[i+2]==mpb_obv[2])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1] and mpb_dmi[i+2]==mpb_dmi[2] ) and (mpb_adx[i] == mpb_adx and mpb_adx[i+1] == mpb_adx[1] and mpb_adx[i+2] == mpb_adx[2]) and (mpb_macd[i]==mpb_macd and mpb_macd[i+1]==mpb_macd[1] and mpb_macd[i+2]==mpb_macd[2])
+    // if (mpb_dmi[i] == mpb_dmi and mpb_dmi[i+1]==mpb_dmi[1] and mpb_dmi[i+2]==mpb_dmi[2] ) and (mpb_adx[i] == mpb_adx) and mpb_macd[i]==mpb_macd and mpb_obv[i]==mpb_obv
+        array.push(matching_bars, i)
+        bars_to_prior_mpb := i
+        // break
+
+//assuming we find a match, see what the next bars looked like
+average_price_delta = 0.0
+average_high_delta = 0.0
+average_low_delta = 0.0
+// aver
+likelihood_short = 0.0
+likelihood_long = 0.0
+long_matches = 0
+short_matches = 0
+for _bars_to_prior_mpb in matching_bars
+    if _bars_to_prior_mpb  > 2
+        for i =0 to 2
+            // average_price_delta += close[bars_to_prior_mpb-i]-close[bars_to_prior_mpb-(i-1)]
+            // average_price_delta += close[bars_to_prior_mpb-(i+1)] - close[bars_to_prior_mpb-i]
+            average_price_delta += close[_bars_to_prior_mpb-(i+1)] - close[_bars_to_prior_mpb-i]
+            // average_price_delta += close[bars_to_prior_mpb-i]-close[bars_to_prior_mpb-(i-1)]
+            // average_high_delta += high[bars_to_prior_mpb-i]-high[bars_to_prior_mpb-(i-1)]
+            average_high_delta +=  high[_bars_to_prior_mpb-(i+1)]  -high[_bars_to_prior_mpb-i]
+            // average_low_delta += low[bars_to_prior_mpb-i]-low[bars_to_prior_mpb-(i-1)]
+            average_low_delta +=  low[_bars_to_prior_mpb-(i+1)]  - low[_bars_to_prior_mpb-i]
+        if (average_price_delta/3) > 0 and (average_high_delta/3) > 0 and  (average_low_delta/3) > 0
+            long_matches := long_matches+1
+        if (average_price_delta/3) <0 and (average_high_delta/3) < 0 and  (average_low_delta/3) < 0
+            short_matches := short_matches+1
+
+
+average_price_delta := average_price_delta/(3*array.size(matching_bars))
+average_high_delta := average_high_delta/(3*array.size(matching_bars))
+average_low_delta := average_low_delta/(3*array.size(matching_bars))
+
+
+likelihood_long := (long_matches/array.size(matching_bars))*100.00
+likelihood_short := (short_matches/array.size(matching_bars))*100.00
+plotchar(bars_to_prior_mpb, "Bars to Prior MPB Value", "", location = location.top)
+plotchar(likelihood_long, "Likelihood Long", "", location = location.top)
+plotchar(likelihood_short, "Likelihood Short", "", location = location.top)
+plotchar(array.size(matching_bars), "Bars Matched", "", location = location.top)
+plotchar(average_high_delta, "Price Change in highs following 3 bars from prior MPB", "", location = location.top)
+plotchar(average_price_delta, "Price Change in following 3 bars from prior MPB", "", location = location.top)
+plotchar(average_low_delta, "Price Change in lows following 3 bars from prior MPB", "", location = location.top)
 
 value = mpb_adx+mpb_dmi+mpb_macd+mpb_obv
 old_value = mpb_adx[1]+mpb_dmi[1]+mpb_macd[1]+mpb_obv[1]
@@ -361,19 +444,45 @@ plotchar(first_pred_low, "First predict low", "", location = location.top)
 plotchar(second_pred_mid, "Second predict", "", location = location.top)
 plotchar(third_pred_mid, "Third predict", "", location = location.top)
 dt = time - time[1]
-first_high = line.new(time, first_pred_high, time+1 , first_pred_high, color = color.green, xloc = xloc.bar_time)
-first_low = line.new(time , first_pred_low, time+1  , first_pred_low,  color = color.red, xloc = xloc.bar_time)
-second_high = line.new(time + 1 * dt , second_pred_high, time + 2 * dt, second_pred_high, color = color.rgb(141, 183, 143),xloc = xloc.bar_time)
-second_low = line.new(time + 1 * dt , second_pred_low, time + 2 * dt, second_pred_low,  color = color.rgb(255, 129, 129),xloc = xloc.bar_time)
-third_high = line.new(time + 2 * dt, third_pred_high, time + 3 * dt, third_pred_high, color = color.rgb(214, 252, 215),xloc = xloc.bar_time)
-third_low = line.new(time + 2 * dt, third_pred_low, time + 3 * dt, third_pred_low, color = color.rgb(238, 182, 182),xloc = xloc.bar_time)
+//long reversal
+plotshape((value > 0 and average_high_delta < 0.05 and average_low_delta < 0.05 and average_price_delta < 0.05), style = shape.arrowdown, color = color.red)
+//long confirmation
+plotshape((value > 0  and value > old_value and average_high_delta > 0 and average_low_delta > 0 and average_price_delta > 0), style = shape.arrowup, color = color.white)
+//short revseral
+plotshape((value < 0  and average_high_delta > -0.05 and average_low_delta > -0.05 and average_price_delta > -0.05), style = shape.arrowup, color = color.green)
+//short confirmation
+plotshape((value < 0 and value < old_value and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0), style = shape.arrowdown, color = color.white)
+// long_reversal = line.new(time-1 , (value > 0 and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0) ? low-3 :na , time+1  , (value > 0 and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0) ? low-3 :na ,  color = color.red, xloc = xloc.bar_time)
+// long_reversal = line.new(time-1 , (value > 0 and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0) ? low-3 :na , time+1  , (value > 0 and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0) ? low-3 :na ,  color = color.red, xloc = xloc.bar_time)
+// long_confirmation = line.new(time-1 , low-3, time+1  , low-3,  color = color.white, xloc = xloc.bar_time)
+// short_revsersal = line.new(time-1 , high+3, time+1  , high+3,  color = color.red, xloc = xloc.bar_time)
+// short_confirmation = line.new(time-1 , high+3, time+1  , high+3,  color = color.white, xloc = xloc.bar_time)
+// // case for long confirmation
+// if not
+//     line.delete(long_confirmation)
+//case for long reversal
+// if not (value > 0 and average_high_delta <0 and average_low_delta <0 and average_price_delta < 0)
+//     line.delete(long_reversal)
+// //short confirmation
+// if not (value <= old_value and value < 0 and average_high_delta < 0 and average_low_delta < 0 and average_price_delta < 0)
+//     line.delete(long_confirmation)
+// //case for short reversal
+// if not (value < 0 and average_high_delta <0 and average_low_delta <0 and average_price_delta < 0)
+//     line.delete(long_reversal)
+
+// first_high = line.new(time, first_pred_high, time+1 , first_pred_high, color = color.green, xloc = xloc.bar_time)
+// first_low = line.new(time , first_pred_low, time+1  , first_pred_low,  color = color.red, xloc = xloc.bar_time)
+// second_high = line.new(time + 1 * dt , second_pred_high, time + 2 * dt, second_pred_high, color = color.rgb(141, 183, 143),xloc = xloc.bar_time)
+// second_low = line.new(time + 1 * dt , second_pred_low, time + 2 * dt, second_pred_low,  color = color.rgb(255, 129, 129),xloc = xloc.bar_time)
+// third_high = line.new(time + 2 * dt, third_pred_high, time + 3 * dt, third_pred_high, color = color.rgb(214, 252, 215),xloc = xloc.bar_time)
+// third_low = line.new(time + 2 * dt, third_pred_low, time + 3 * dt, third_pred_low, color = color.rgb(238, 182, 182),xloc = xloc.bar_time)
 // line.set_extend()
-line.delete(first_high[1])
-line.delete(first_low[1])
-line.delete(second_high[1])
-line.delete(second_low[1])
-line.delete(third_high[1])
-line.delete(third_low[1])
+// line.delete(first_high[1])
+// line.delete(first_low[1])
+// line.delete(second_high[1])
+// line.delete(second_low[1])
+// line.delete(third_high[1])
+// line.delete(third_low[1])
 // line.delete(lowLine[1])
 // hline(mpb_adx, title="First Prediction", color=color.gray, linestyle=hline.style_dashed, linewidth = 3.0)
 // plot(first_pred_high, color = color.green, offset = 1)
