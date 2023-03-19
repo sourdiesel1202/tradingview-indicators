@@ -1,5 +1,6 @@
 //@version=5
 indicator("Money Printer Go BRRRRRR")
+import sourdiesel1202/MPB/2 as mpb
 // drawVerticalLine(offset,color) =>
     // line.new(bar_index[offset], low-LineLength, bar_index[offset], high+LineLength, color=color.new(color.yellow, 50), width=3)
 // adx_lookback=input(4, "ADX Lookback")
@@ -8,7 +9,7 @@ indicator("Money Printer Go BRRRRRR")
 // obv_percent = input(5, "OBV Percent")
 trend_lookback=input(1,"Trend Lookback")
 
-obv_percent = input(0.01, "OBV Delta Percent", "The percentage between obv and obv[1], exceed this value to consider OBV trend strong")
+// obv_percent =
 _adx = input(14,"ADX Value")
 // debug = input(true, "Debug", "Enable Logging")
 // [prior_dmilpus, prior_dmineg, prior_adx] = ta.dmi(14, 14)
@@ -19,438 +20,426 @@ _adx = input(14,"ADX Value")
 _dmiplus = input(17, "DMI+ Signal")
 _dmineg = input(17, "DMI- Signal")
 dmi_delta = input(1, "DMI Delta")
-dmi_rapid=input(7, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
+dmi_rapid=input(5, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
 adx_rapid=input(0.5, "ADX Rapid Change", "The delta between ADX[1] and ADX. If this value is exceeded, flag reversal")
 // is_sinking(_indicator, _lookback)=>
-calculate_macd_value(prior=0) =>
-    slowlength = 26
-    fastLength = 12
-    MACDLength = 9
-    fast_ma = ta.ema(close, fastLength)
-    slow_ma = ta.ema(close, slowlength)
-    macd = fast_ma - slow_ma
-    signal = ta.ema(macd, MACDLength)
-    // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
-    // aMACD = ta.ema(MACD[1], MACDLength)
-    // delta = MACD - aMACD
-    // signal=ta.ema(aMACD, MACDLength)
-    ema20 = ta.ema(close,20)
-    // ok so the idea here is- is the macd over  the ema (signal) line
-    _value =0.0
-    hist = macd -signal
-    //ok so first, add our positive vs negative flag
+// calculate_macd_value(prior=0) =>
+//     slowlength = 26
+//     fastLength = 12
+//     MACDLength = 9
+//     fast_ma = ta.ema(close, fastLength)
+//     slow_ma = ta.ema(close, slowlength)
+//     macd = fast_ma - slow_ma
+//     signal = ta.ema(macd, MACDLength)
+//     // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+//     // aMACD = ta.ema(MACD[1], MACDLength)
+//     // delta = MACD - aMACD
+//     // signal=ta.ema(aMACD, MACDLength)
+//     ema20 = ta.ema(close,20)
+//     // ok so the idea here is- is the macd over  the ema (signal) line
+//     _value =0.0
+//     hist = macd -signal
+//     //ok so first, add our positive vs negative flag
 
-    if macd > signal //case for long position
-        if macd > macd[2] //if the general trend is up
-            if hist[1] < hist //so now we look at the histogram,
-                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
-                    _value :=0.20
-                else
-                    _value :=0.12
-            else //otherwise we are
-                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-                    _value :=0.12
-                else
-                    _value :=0.05
-        else //otherwise, the general trend is down
-            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-                _value :=0.12
-            else
-                _value :=0.0
+//     if macd > signal //case for long position
+//         if macd > macd[2] //if the general trend is up
+//             if hist[1] < hist //so now we look at the histogram,
+//                 if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+//                     _value :=0.20
+//                 else
+//                     _value :=0.12
+//             else //otherwise we are
+//                 if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//                     _value :=0.12
+//                 else
+//                     _value :=0.05
+//         else //otherwise, the general trend is down
+//             if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//                 _value :=0.12
+//             else
+//                 _value :=0.0
 
-    else
-        if macd < macd[2] // gemeral trend is down
-            if hist[1] > hist //look at histogram
-                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                    _value :=-0.20
-                else
-                    _value :=-0.12
-            else
-                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                    _value :=-0.12
-                else
-                    _value:=-0.05
-        else
-            // _value := -0.125
-            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                _value :=-0.12
-            else
-                _value :=0.0
-    //check for positive vs negative macd values
-    if macd > 0
-        _value := _value+0.05
-    else
-        _value := _value+-0.05
+//     else
+//         if macd < macd[2] // gemeral trend is down
+//             if hist[1] > hist //look at histogram
+//                 if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                     _value :=-0.20
+//                 else
+//                     _value :=-0.12
+//             else
+//                 if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                     _value :=-0.12
+//                 else
+//                     _value:=-0.05
+//         else
+//             // _value := -0.125
+//             if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                 _value :=-0.12
+//             else
+//                 _value :=0.0
+//     //check for positive vs negative macd values
+//     if macd > 0
+//         _value := _value+0.05
+//     else
+//         _value := _value+-0.05
 
-    //ok so if a crossover happened, take this as a strong trend
-    if macd > signal and macd[1] < signal[1]
-        _value:=0.25
-    if macd < signal and macd[1] > signal[1]
-        _value:=-0.25
-    [_value]
-calculate_obv_value(prior=0)=>
-    obv = ta.obv
-    // obv = ta.obv
-    obv_delta= 0.0
-    // obv_delta_p
-    _value = 0.0
-    // _obv_percent = 0.0
-    delta_percent = 0.0
-    delta_percent_prior = 0.0
-    // multiplier = 1.0
-    if obv > 0
-        _value := _value+0.05
-    else
-        _value := _value-0.05
-    obv_delta := obv-obv[1]
-    obv_delta_prior = obv[1]-obv[2]
+//     //ok so if a crossover happened, take this as a strong trend
+//     if macd > signal and macd[1] < signal[1]
+//         _value:=0.25
+//     if macd < signal and macd[1] > signal[1]
+//         _value:=-0.25
+//     [_value]
+// calculate_obv_value(prior=0)=>
+//     obv = ta.obv
+//     // obv = ta.obv
+//     obv_delta= 0.0
+//     // obv_delta_p
+//     _value = 0.0
+//     // _obv_percent = 0.0
+//     delta_percent = 0.0
+//     delta_percent_prior = 0.0
+//     // multiplier = 1.0
+//     if obv > 0
+//         _value := _value+0.05
+//     else
+//         _value := _value-0.05
+//     obv_delta := obv-obv[1]
+//     obv_delta_prior = obv[1]-obv[2]
 
-    if obv > obv[1]
-        delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+//     if obv > obv[1]
+//         delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
 
-    else
-        delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+//     else
+//         delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
 
-    if obv>obv[2]
-        delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
-    else
-        delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+//     if obv>obv[2]
+//         delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+//     else
+//         delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
 
-    if delta_percent > 0
-        if delta_percent > obv_percent
-            if obv > obv[2]
-                if delta_percent_prior > obv_percent
-                    _value :=0.245
-                else
-                    _value := 0.125
-            else
-                if delta_percent_prior > obv_percent
-                    _value :=-0.1245
-                else
-                    _value :=-0.05
+//     if delta_percent > 0
+//         if delta_percent > obv_percent
+//             if obv > obv[2]
+//                 if delta_percent_prior > obv_percent
+//                     _value :=0.245
+//                 else
+//                     _value := 0.125
+//             else
+//                 if delta_percent_prior > obv_percent
+//                     _value :=-0.1245
+//                 else
+//                     _value :=-0.05
 
-        else
-            if delta_percent_prior > obv_percent
-                _value:=0.245
-            else
-                _value :=0.125
-    else
-        if delta_percent < (obv_percent*-1)
-            if obv < obv[2]
-                if delta_percent_prior < (obv_percent*-1)
-                    _value :=-0.245
-                else
-                    _value := 0.125
-            else
-                if delta_percent_prior < (obv_percent*-1)
-                    _value :=0.1245
-                else
-                    _value := 0.05
-        else
-            if delta_percent_prior < (obv_percent *-1)
-                _value :=-0.245
-            else
-                _value :=-0.125
+//         else
+//             if delta_percent_prior > obv_percent
+//                 _value:=0.245
+//             else
+//                 _value :=0.125
+//     else
+//         if delta_percent < (obv_percent*-1)
+//             if obv < obv[2]
+//                 if delta_percent_prior < (obv_percent*-1)
+//                     _value :=-0.245
+//                 else
+//                     _value := 0.125
+//             else
+//                 if delta_percent_prior < (obv_percent*-1)
+//                     _value :=0.1245
+//                 else
+//                     _value := 0.05
+//         else
+//             if delta_percent_prior < (obv_percent *-1)
+//                 _value :=-0.245
+//             else
+//                 _value :=-0.125
     // obv = ta.obv
     // obv_delta= 0.0
     // // obv_delta_p
     // _value = 0.0
     // // _obv_percent = 0.0
-    // delta_percent = 0.0
-    // // multiplier = 1.0
-    // if obv > 0
-    //     _value := _value+0.05
-    // else
-    //     _value := _value-0.05
-    // obv_delta := obv-obv[1]
-    // if obv > obv[1]
-    //     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
-    // else
-    //     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
-    // if delta_percent > 0
-    //     if delta_percent > obv_percent
-    //         if obv > obv[2]
-    //             _value :=0.245
-    //         else
-    //             _value :=-0.1245
-    //     else
-    //         _value:=0.05
-    // else
-    //     if delta_percent < (obv_percent*-1)
-    //         if obv < obv[2]
-    //             _value :=-0.245
-    //         else
-    //             _value :=0.1245
-    //     else
-    //         _value :=-0.05
+//     // delta_percent = 0.0
+//     // // multiplier = 1.0
+//     // if obv > 0
+//     //     _value := _value+0.05
+//     // else
+//     //     _value := _value-0.05
+//     // obv_delta := obv-obv[1]
+//     // if obv > obv[1]
+//     //     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+//     // else
+//     //     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+//     // if delta_percent > 0
+//     //     if delta_percent > obv_percent
+//     //         if obv > obv[2]
+//     //             _value :=0.245
+//     //         else
+//     //             _value :=-0.1245
+//     //     else
+//     //         _value:=0.05
+//     // else
+//     //     if delta_percent < (obv_percent*-1)
+//     //         if obv < obv[2]
+//     //             _value :=-0.245
+//     //         else
+//     //             _value :=0.1245
+//     //     else
+//     //         _value :=-0.05
 
-    [_value]
+//     // [_value]
 
-calculate_adx_value(prior=0)=>
-// [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
+// calculate_adx_value(prior=0)=>
+// // [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+//     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
 
-    _value=0.0
-    if adx > adx[2] //we know trend is strong
-        if adx > 20
-            _value :=0.25
-        else
-            _value := 0.175
-    else
-        _value := -0.125
+//     _value=0.0
+//     if adx > adx[2] //we know trend is strong
+//         if adx > 20
+//             _value :=0.25
+//         else
+//             _value := 0.175
+//     else
+//         _value := -0.175
 
-    // if dmineg > dmilpus
-        // _value := _value *-1
-
-
-
-    // if adx > adx[1]
-    //     _value:=0.25
-
-    // else
-    //     if adx > adx[2]
-    //         _value:=0.125
-    //     if adx[1]-adx > adx_rapid
-    //         _value:=0
-    //     else
-    //         _value:=0.125
-    // if adx > adx[1]
-    //     _value:=0.25
-    // else
-    //     sinking=true
-    //     for i =0 to trend_lookback
-    //         if sinking
-    //             if adx[i+prior] > adx[i+1]
-    //                 sinking:=false
-    //     // _sinking = sinking
-
-    //     if sinking
-    //         _value:=0.0
-    //     else
-    //         _value :=0.125
-    _value :=  dmilpus > dmineg ? 1*_value : -1*_value
-
-    // plotchar(_value, "MPB ADX Value", "", location = location.top)
-    [_value]
-calculate_dmi_value()=>
-    _value=0.0
-    [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(3, "ADX Smoothing"))
-    if dmilpus >= dmineg and dmilpus >= _dmiplus
-        if dmilpus-dmineg > dmi_delta
-            if dmilpus > dmilpus[2]
-            // if dmilpus > dmilpus[1]
-                _value:=0.175
-            else
-                _value:=0.05 //flag reversal
-            // else
-
-                    // _value:=0.25
-                // else
-                    // _value:=0
-    //# check to see if dmi+ is trending down and dmi- is trending up
-    // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
-        //plot(1,color = color.green)
-        else
-            _value:=0.125
-        // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
-            // value:=0.5
+//     // if dmineg > dmilpus
+//         // _value := _value *-1
 
 
-    //case for rapid changes pointing to reversal
-        if dmilpus[1]-dmilpus > dmi_rapid
-            _value:=0
-        if dmineg[1] > dmilpus[1]
-            _value:=0.175
-    // if dmilpus
-    // if dmilpus-dmineg <= dmi_delta
-        // value:=0
-    // if dmilpus-dmineg < input(15, "DMI Delta")
-    //     value:=0.5
-    // else
-    //     value := 0.5
-    // []
-    if dmineg >= dmilpus and dmineg >= _dmineg
-        if dmineg-dmilpus > dmi_delta
-            if dmineg > dmineg[2]
-                _value:=-0.175
-            else
-                // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
-                //     _value:=-0.25
-                // else
-                _value:=-0.05
-        // if adx > prior_adx
-        else
-            _value:=-0.125
-            // if  rsi >= input(60, "RSI High")
-                // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
-            // else
-            //     value := -0.5
-        if dmineg[1]-dmineg > dmi_rapid
-            _value:=0
 
-        if dmineg[1] < dmilpus[1]
-            _value:=-0.175
+//     // if adx > adx[1]
+//     //     _value:=0.25
+
+//     // else
+//     //     if adx > adx[2]
+//     //         _value:=0.125
+//     //     if adx[1]-adx > adx_rapid
+//     //         _value:=0
+//     //     else
+//     //         _value:=0.125
+//     // if adx > adx[1]
+//     //     _value:=0.25
+//     // else
+//     //     sinking=true
+//     //     for i =0 to trend_lookback
+//     //         if sinking
+//     //             if adx[i+prior] > adx[i+1]
+//     //                 sinking:=false
+//     //     // _sinking = sinking
+
+//     //     if sinking
+//     //         _value:=0.0
+//     //     else
+//     //         _value :=0.125
+//     _value :=  dmilpus > dmineg ? 1*_value : -1*_value
+//     // plotchar(_value, "MPB ADX Value", "", location = location.top)
+//     [_value]
+// calculate_dmi_value()=>
+//     _value=0.0
+//     [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+//     if dmilpus >= dmineg and dmilpus >= _dmiplus
+//         if dmilpus-dmineg > dmi_delta
+//             if dmilpus > dmilpus[2]
+//             // if dmilpus > dmilpus[1]
+//                 _value:=0.25
+//             else
+//                 _value:=0.0 //flag reversal
+//             // else
+
+//                     // _value:=0.25
+//                 // else
+//                     // _value:=0
+//     //# check to see if dmi+ is trending down and dmi- is trending up
+//     // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
+//         //plot(1,color = color.green)
+//         else
+//             _value:=0.125
+//         // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
+//             // value:=0.5
 
 
-    if dmilpus > dmineg and dmilpus > adx
-        _value := _value +0.075
-    if dmineg > dmilpus and dmineg > adx
-        _value := _value -0.075
-    [_value]
+//     //case for rapid changes pointing to reversal
+//         if dmilpus[1]-dmilpus > dmi_rapid
+//             _value:=0
+//     // if dmilpus
+//     // if dmilpus-dmineg <= dmi_delta
+//         // value:=0
+//     // if dmilpus-dmineg < input(15, "DMI Delta")
+//     //     value:=0.5
+//     // else
+//     //     value := 0.5
+//     // []
+//     if dmineg >= dmilpus and dmineg >= _dmineg
+//         if dmineg-dmilpus > dmi_delta
+//             if dmineg > dmineg[2]
+//                 _value:=-0.25
+//             else
+//                 // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
+//                 //     _value:=-0.25
+//                 // else
+//                 _value:=0
+//         // if adx > prior_adx
+//         else
+//             _value:=-0.125
+//             // if  rsi >= input(60, "RSI High")
+//                 // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
+//             // else
+//             //     value := -0.5
+//         if dmineg[1]-dmineg > dmi_rapid
+//             _value:=0
+//     [_value]
 // old_value = 0.0
 
 
-//
-// BEGIN DEBUG LOGGING
-// uncomment below lines for debug logging (show values in data window)
-//
-//OBV
-obv = ta.obv
+// // //
+// // // BEGIN DEBUG LOGGING
+// // // uncomment below lines for debug logging (show values in data window)
+// // //
+// // //OBV
 // obv = ta.obv
-obv_delta= 0.0
-// obv_delta_p
-_value = 0.0
-// _obv_percent = 0.0
-delta_percent = 0.0
-delta_percent_prior = 0.0
-// multiplier = 1.0
-if obv > 0
-    _value := _value+0.05
-else
-    _value := _value-0.05
-obv_delta := obv-obv[1]
-obv_delta_prior = obv[1]-obv[2]
+// // obv = ta.obv
+// obv_delta= 0.0
+// // obv_delta_p
+// _value = 0.0
+// // _obv_percent = 0.0
+// delta_percent = 0.0
+// delta_percent_prior = 0.0
+// // multiplier = 1.0
+// if obv > 0
+//     _value := _value+0.05
+// else
+//     _value := _value-0.05
+// obv_delta := obv-obv[1]
+// obv_delta_prior = obv[1]-obv[2]
 
-if obv > obv[1]
-    delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+// if obv > obv[1]
+//     delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
 
-else
-    delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+// else
+//     delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
 
-if obv>obv[2]
-    delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
-else
-    delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+// if obv>obv[2]
+//     delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+// else
+//     delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
 
-if delta_percent > 0
-    if delta_percent > obv_percent
-        if obv > obv[2]
-            if delta_percent_prior > obv_percent
-                _value :=0.245
-            else
-                _value := 0.125
-        else
-            if delta_percent_prior > obv_percent
-                _value :=-0.1245
-            else
-                _value :=-0.05
+// if delta_percent > 0
+//     if delta_percent > 0.01
+//         if obv > obv[2]
+//             if delta_percent_prior > 0.01
+//                 _value :=0.245
+//             else
+//                 _value := 0.125
+//         else
+//             if delta_percent_prior > 0.01
+//                 _value :=-0.1245
+//             else
+//                 _value :=-0.05
 
-    else
-        if delta_percent_prior > obv_percent
-            _value:=0.245
-        else
-            _value :=0.125
-else
-    if delta_percent < (obv_percent*-1)
-        if obv < obv[2]
-            if delta_percent_prior < (obv_percent*-1)
-                _value :=-0.245
-            else
-                _value := 0.125
-        else
-            if delta_percent_prior < (obv_percent*-1)
-                _value :=0.1245
-            else
-                _value := 0.05
-    else
-        if delta_percent_prior < (obv_percent *-1)
-            _value :=-0.245
-        else
-            _value :=-0.125
-plotchar(_value, "MPB OBV Value (Debug)", "", location = location.top)
+//     else
+//         if delta_percent_prior > 0.01
+//             _value:=0.245
+//         else
+//             _value :=0.125
+// else
+//     if delta_percent < (0.01*-1)
+//         if obv < obv[2]
+//             if delta_percent_prior < (0.01*-1)
+//                 _value :=-0.245
+//             else
+//                 _value := 0.125
+//         else
+//             if delta_percent_prior < (0.01*-1)
+//                 _value :=0.1245
+//             else
+//                 _value := 0.05
+//     else
+//         if delta_percent_prior < (0.01 *-1)
+//             _value :=-0.245
+//         else
+//             _value :=-0.125
+// plotchar(_value, "MPB OBV Value (Debug)", "", location = location.top)
 
-plotchar(obv, "OBV Value", "", location = location.top)
-plotchar(obv[1], "OBV[1] Value", "", location = location.top)
-plotchar(obv_delta, "OBV Delta", "", location = location.top)
-plotchar(delta_percent, "OBV Delta Percent", "", location = location.top)
-plotchar(delta_percent_prior, "OBV Delta Percent Prior", "", location = location.top)
+// plotchar(obv, "OBV Value", "", location = location.top)
+// plotchar(obv[1], "OBV[1] Value", "", location = location.top)
+// plotchar(obv_delta, "OBV Delta", "", location = location.top)
+// plotchar(delta_percent, "OBV Delta Percent", "", location = location.top)
+// plotchar(delta_percent_prior, "OBV Delta Percent Prior", "", location = location.top)
 
 
-//MACD DEBUG
-slowlength = 26
-fastLength = 12
-MACDLength = 9
-fast_ma = ta.ema(close, fastLength)
-slow_ma = ta.ema(close, slowlength)
-macd = fast_ma - slow_ma
-signal = ta.ema(macd, MACDLength)
-// MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
-// aMACD = ta.ema(MACD[1], MACDLength)
-// delta = MACD - aMACD
-// signal=ta.ema(aMACD, MACDLength)
-ema20 = ta.ema(close,20)
-// ok so the idea here is- is the macd over  the ema (signal) line
-_value :=0.0
-hist = macd -signal
-//ok so first, add our positive vs negative flag
+// //MACD DEBUG
+// slowlength = 26
+// fastLength = 12
+// MACDLength = 9
+// fast_ma = ta.ema(close, fastLength)
+// slow_ma = ta.ema(close, slowlength)
+// macd = fast_ma - slow_ma
+// signal = ta.ema(macd, MACDLength)
+// // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+// // aMACD = ta.ema(MACD[1], MACDLength)
+// // delta = MACD - aMACD
+// // signal=ta.ema(aMACD, MACDLength)
+// ema20 = ta.ema(close,20)
+// // ok so the idea here is- is the macd over  the ema (signal) line
+// _value :=0.0
+// hist = macd -signal
+// //ok so first, add our positive vs negative flag
 
-if macd > signal //case for long position
-    if macd > macd[2] //if the general trend is up
-        if hist[1] < hist //so now we look at the histogram,
-            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
-                _value :=0.20
-            else
-                _value :=0.12
-        else //otherwise we are
-            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-                _value :=0.12
-            else
-                _value :=0.05
-    else //otherwise, the general trend is down
-        if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
-            _value :=0.12
-        else
-            _value :=0.0
+// if macd > signal //case for long position
+//     if macd > macd[2] //if the general trend is up
+//         if hist[1] < hist //so now we look at the histogram,
+//             if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+//                 _value :=0.20
+//             else
+//                 _value :=0.12
+//         else //otherwise we are
+//             if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//                 _value :=0.12
+//             else
+//                 _value :=0.05
+//     else //otherwise, the general trend is down
+//         if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+//             _value :=0.12
+//         else
+//             _value :=0.0
 
-else
-    if macd < macd[2] // gemeral trend is down
-        if hist[1] > hist //look at histogram
-            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                _value :=-0.20
-            else
-                _value :=-0.12
-        else
-            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-                _value :=-0.12
-            else
-                _value:=-0.05
-    else
-        // _value := -0.125
-        if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
-            _value :=-0.12
-        else
-            _value :=0.0
-//check for positive vs negative macd values
-if macd > 0
-    _value := _value+0.05
-else
-    _value := _value+-0.05
+// else
+//     if macd < macd[2] // gemeral trend is down
+//         if hist[1] > hist //look at histogram
+//             if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                 _value :=-0.20
+//             else
+//                 _value :=-0.12
+//         else
+//             if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//                 _value :=-0.12
+//             else
+//                 _value:=-0.05
+//     else
+//         // _value := -0.125
+//         if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+//             _value :=-0.12
+//         else
+//             _value :=0.0
+// //check for positive vs negative macd values
+// if macd > 0
+//     _value := _value+0.05
+// else
+//     _value := _value+-0.05
 
-//ok so if a crossover happened, take this as a strong trend
-if macd > signal and macd[1] < signal[1]
-    _value:=0.25
-if macd < signal and macd[1] > signal[1]
-    _value:=-0.25
+// //ok so if a crossover happened, take this as a strong trend
+// if macd > signal and macd[1] < signal[1]
+//     _value:=0.25
+// if macd < signal and macd[1] > signal[1]
+//     _value:=-0.25
 
-plotchar(hist, "MACD Histogram Value", "", location = location.top)
-plotchar(macd, "MACD Value", "", location = location.top)
-plotchar(_value, "MPB MACD Value (Debug) ", "", location = location.top)
-plotchar(signal, "MACD Signal Value", "", location = location.top)
+// plotchar(hist, "MACD Histogram Value", "", location = location.top)
+// plotchar(macd, "MACD Value", "", location = location.top)
+// plotchar(_value, "MPB MACD Value (Debug) ", "", location = location.top)
+// plotchar(signal, "MACD Signal Value", "", location = location.top)
 
-[mpb_dmi] = calculate_dmi_value()
-[mpb_adx] = calculate_adx_value()
-[mpb_macd]=calculate_macd_value()
-[mpb_obv]= calculate_obv_value()
+[mpb_dmi] = mpb.calculate_dmi_value(dmi_delta,_dmiplus, _dmineg,dmi_rapid)
+[mpb_adx] = mpb.calculate_adx_value()
+[mpb_macd]=mpb.calculate_macd_value()
+[mpb_obv]= mpb.calculate_obv_value(0.01)
 // if debug
 plotchar(mpb_macd, "MPB MACD Value", "", location = location.top)
 plotchar(mpb_obv, "MPB OBV Value", "", location = location.top)
@@ -467,8 +456,8 @@ plot(1, color = color.purple)
 plot(-1, color = color.purple)
 plot(value, color = color.blue)
 // plot(mpb_macd, color = color.yellow)
-plot(mpb_adx, color = color.white)
-plot(mpb_obv, color = color.green)
+// plot(mpb_adx, color = color.white)
+// plot(mpb_obv, color = color.green)
 // plot(mpb_dmi, color = color.white)
 // plot(mpb_adx, color = color.yellow)
 //pl//ot(signalLine, color = color.orange)
