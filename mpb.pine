@@ -1,0 +1,326 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sourdiesel1202
+
+//@version=5
+
+// @description MONEY PRINTER GO BRRRRRRRRRRR
+library("MPB")
+
+// obv_percent = input(5, "OBV Percent")
+// trend_lookback=input(1,"Trend Lookback")
+
+// obv_percent = input(0.01, "OBV Delta Percent", "The percentage between obv and obv[1], exceed this value to consider OBV trend strong")
+_adx = input(14,"ADX Value")
+// debug = input(true, "Debug", "Enable Logging")
+// [prior_dmilpus, prior_dmineg, prior_adx] = ta.dmi(14, 14)
+
+//[macdLine, signalLine, histLine] = ta.macd(close, fastInput, slowInput, 9)
+// obv = ta.obv
+// prior_obv = ta.obv[1]
+// dmi_delta = input(1, "DMI Delta")
+// dmi_rapid=input(5, "DMI Rapid Change", "The delta between DMI[1] and DMI. If this value is exceeded, flag reversal")
+
+// _dmiplus = input(17, "DMI+ Signal")
+// _dmineg = input(17, "DMI- Signal")
+// adx_rapid=input(0.5, "ADX Rapid Change", "The delta between ADX[1] and ADX. If this value is exceeded, flag reversal")
+// is_sinking(_indicator, _lookback)=>
+xxs_mpb_value=1
+xs_mpb_value=3
+s_mpb_value=5
+m_mpb_value=8
+l_mpb_value=12
+xl_mpb_value=15
+xxl_mpb_value=20
+export calculate_sma_value() =>
+    fast_sma = ta.sma(close, 9)
+    slow_sma = ta.sma(close, 20)
+    // ok so the idea here is check if we have a positive or negative swing over sma
+    sma_value = 0.0
+    //what the literal fuck
+    //bruh this shouldn't be this hard (that's what she said)
+    //chec
+    if close < open // red candle
+        //for the sake of dumbassery we're going to ignore open price
+        //indicates downtrend
+        if close < slow_sma
+            sma_value := (-1*l_mpb_value)+sma_value
+        if close < fast_sma
+            sma_value := (-1*m_mpb_value)+sma_value
+
+        //indicates selloff in uptren
+        if close > slow_sma
+            sma_value := s_mpb_value+sma_value
+        if close > fast_sma
+            sma_value := xs_mpb_value+sma_value
+        // if over long SMA
+
+    else //green candle
+        //greenily deenily
+        //indicates buyup in overall downtrend
+        if close  < slow_sma
+            sma_value := (-1*m_mpb_value)+sma_value
+        if close < fast_sma
+            sma_value := (-1*s_mpb_value)+sma_value
+            // _value := _value +(xs_mpb_value*-1)
+
+        //indicates uptrend
+        if close > slow_sma
+            sma_value := l_mpb_value+sma_value
+        if close > fast_sma
+            sma_value :=m_mpb_value+sma_value
+
+    [sma_value, fast_sma, slow_sma, close, open]
+
+// export calculate_prediction( int _mpb_obv, int _mpb_dm, int _mpb_macd, int prior_bars, int prediction_lookback ) =>
+//     prediction=0.0
+//     price_averge = 0.0//array.new_float(prediction_lookback)
+//     price_delta_average = 0.0//  array.new_float(prediction_lookback)
+//     highs_lows =  0.0//array.new_float(prediction_lookback)
+//     iterations = 0
+//     bars_in_future =3
+//     for i = 0 to prediction_lookback
+//         iterations := iterations +1
+//         price_averge := price_averge + (open[prior_bars+i+1]+close[prior_bars+i])/2
+//         price_delta_average := (close[prior_bars+i]-open[prior_bars+i+1]) + price_delta_average
+//         // price_delta_average := price_delta_average + (((open[i+1]+close[i])/2)-(((open[i+1]+close[i])/2)))
+//         // price_delta_average := price_delta_average + (((close[i]+open[i])/2)-((close[i+1]+open[i+1])/2))
+//         // price_delta_average := price_delta_average+open-open[1]
+//         highs_lows := highs_lows+(high[prior_bars+i]-low[prior_bars+i])
+
+//     // highs_lows/prediction_lookback]7
+//     //ok so to calculate the next i bars we need to take the price delta average
+//     // for i = 1 to bars_in_future
+//     //do first prediction
+//     first_pred_mid = (price_averge/(prediction_lookback+1))+(price_delta_average/(prediction_lookback+1))
+//     first_pred_high = ((highs_lows/(prediction_lookback+1))/2)+first_pred_mid
+//     first_pred_low = first_pred_mid -((highs_lows/(prediction_lookback+1))/2)
+
+//     //second predication
+//     second_pred_mid = ((price_averge+first_pred_mid)/(prediction_lookback+2))+(price_delta_average/(prediction_lookback+1))
+//     second_pred_high = ((highs_lows/(prediction_lookback+1))/2)+second_pred_mid
+//     second_pred_low = second_pred_mid - ((highs_lows/(prediction_lookback+1))/2)
+
+//     //third prediction
+//     third_pred_mid = ((price_averge+first_pred_mid+second_pred_mid)/(prediction_lookback+3))+(price_delta_average/(prediction_lookback+1))
+//     third_pred_high = ((highs_lows/(prediction_lookback+1))/2)+third_pred_mid
+//     third_pred_low =  third_pred_mid -((highs_lows/(prediction_lookback+1))/2)
+
+//     [ first_pred_high,first_pred_mid, first_pred_low, second_pred_high, second_pred_mid, second_pred_low, third_pred_high, third_pred_mid, third_pred_low]
+
+export calculate_macd_value() =>
+    slowlength = 26
+    fastLength = 12
+    MACDLength = 9
+    fast_ma = ta.ema(close, fastLength)
+    slow_ma = ta.ema(close, slowlength)
+    macd = fast_ma - slow_ma
+    signal = ta.ema(macd, MACDLength)
+    // MACD = ta.ema(close, fastLength) - ta.ema(close, slowlength)
+    // aMACD = ta.ema(MACD[1], MACDLength)
+    // delta = MACD - aMACD
+    // signal=ta.ema(aMACD, MACDLength)
+    ema20 = ta.ema(close,20)
+    // ok so the idea here is- is the macd over  the ema (signal) line
+    _value =0.0
+    hist = macd -signal
+    //ok so first, add our positive vs negative flag
+
+    if macd > signal //case for long position
+        if macd > macd[2] //if the general trend is up
+            if hist[1] < hist //so now we look at the histogram,
+                if signal-macd <= (signal-macd> 0 ? 1.0 : -1.0)//ensure the delta is actually worth noting
+                    _value :=xxl_mpb_value-1
+                else
+                    _value :=xl_mpb_value
+                if hist[2] > hist[1]  //basically this check says was the prior bar indicating reversal on the histo
+                    _value := _value -m_mpb_value
+            else //otherwise we are
+                if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+                    _value :=m_mpb_value
+                else
+                    _value :=s_mpb_value
+        else //otherwise, the general trend is down
+            if signal-macd > (signal-macd> 0 ? 1.0 : -1.0)
+                _value :=xs_mpb_value
+            else
+                _value :=0.0
+
+    else //case for short
+        if macd < macd[2] // gemeral trend is down
+            if hist[1] > hist //look at histogram
+                if macd-signal <= (macd-signal> 0 ? 1.0 : -1.0)
+                    _value :=(xxl_mpb_value*-1)+1
+                else
+                    _value :=(xl_mpb_value*-1)
+
+                if hist[2] < hist[1]  //basically this check says was the prior bar indicating reversal on the histo
+                    _value := _value +m_mpb_value
+            else
+                if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                    _value :=(m_mpb_value*-1)
+                else
+                    _value:=(s_mpb_value*-1)
+        else
+            // _value := -0.125
+            if macd-signal > (macd-signal> 0 ? 1.0 : -1.0)
+                _value :=(xs_mpb_value*-1)
+            else
+                _value :=0.0
+    //check for positive vs negative macd values
+    if macd > 0
+        _value := _value+xxs_mpb_value
+    else
+        _value := _value+(xxs_mpb_value*-1)
+
+    //ok so if a crossover happened, take this as a strong trend
+    if macd > signal and macd[1] < signal[1]
+        _value:=xxl_mpb_value
+    if macd < signal and macd[1] > signal[1]
+        _value:=xxl_mpb_value*-1
+    [_value]
+export  calculate_obv_value(float obv_percent)=>
+    obv = ta.obv
+    // obv = ta.obv
+    obv_delta= 0.0
+    // obv_delta_p
+    _value = 0.0
+    // _obv_percent = 0.0
+    delta_percent = 0.0
+    delta_percent_prior = 0.0
+    // multiplier = 1.0
+    if obv > 0
+        _value := _value+xs_mpb_value
+    else
+        _value := _value-xs_mpb_value
+    obv_delta := obv-obv[1]
+    obv_delta_prior = obv[1]-obv[2]
+
+    if obv > obv[1]
+        delta_percent := ((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100
+
+    else
+        delta_percent := (((obv_delta > 0) ?obv_delta : obv_delta*-1)/(obv[1] > 0 ? obv[1]: obv[1]*-1)*100) * -1
+
+    if obv>obv[2]
+        delta_percent_prior := ((obv_delta_prior > 0) ? obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100
+    else
+        delta_percent_prior := (((obv_delta_prior > 0) ?obv_delta_prior : obv_delta_prior*-1)/(obv[2] > 0 ? obv[2]: obv[2]*-1)*100) * -1
+
+    if delta_percent > 0
+        if delta_percent > obv_percent
+            if obv > obv[2]
+                if delta_percent_prior > obv_percent
+                    _value :=xl_mpb_value
+                else
+                    _value := l_mpb_value
+            else
+                if delta_percent_prior > obv_percent
+                    _value :=l_mpb_value*-1
+                else
+                    _value :=xs_mpb_value*-1
+
+        else
+            if delta_percent_prior > obv_percent
+                _value:=xl_mpb_value
+            else
+                _value :=l_mpb_value
+    else
+        if delta_percent < (obv_percent*-1)
+            if obv < obv[2]
+                if delta_percent_prior < (obv_percent*-1)
+                    _value :=xl_mpb_value*-1
+                else
+                    _value := l_mpb_value
+            else
+                if delta_percent_prior < (obv_percent*-1)
+                    _value :=l_mpb_value
+                else
+                    _value := xs_mpb_value
+        else
+            if delta_percent_prior < (obv_percent *-1)
+                _value :=(xl_mpb_value*-1)
+            else
+                _value :=(l_mpb_value*-1)
+    // obv = ta.obv
+
+    [_value]
+
+
+export calculate_adx_value()=>
+// [dmilpus, dmineg, adx] = ta.dmi(input(14,"DMI Length"), input(14, "ADX Smoothing"))
+    [dmilpus, dmineg, adx] = ta.dmi(14, 3)
+
+    _value=0.0
+    if adx > adx[2] //we know trend is strong
+        if adx > 20
+            _value :=xxl_mpb_value
+        else
+            _value := xl_mpb_value
+    else
+        //ok so here we need to do some logic to determine if adx is decreasing as a new trend is forming
+        if (dmilpus > dmilpus[2] and dmineg < dmineg[2]) or (dmineg > dmineg[2] and dmilpus[2] >dmilpus)
+            _value := xl_mpb_value
+        else
+            _value := m_mpb_value
+
+
+
+    _value :=  dmilpus > dmineg ? 1*_value : -1*_value
+    // plotchar(_value, "MPB ADX Value", "", location = location.top)
+    [_value]
+
+export calculate_dmi_value(int dmi_delta, int _dmiplus, int _dmineg,int dmi_rapid)=>
+
+    _value=0.0
+    [dmilpus, dmineg, adx] = ta.dmi(14, 3)
+    if dmilpus >= dmineg and dmilpus >= _dmiplus
+        if dmilpus-dmineg > dmi_delta
+            if dmilpus > dmilpus[2]
+            // if dmilpus > dmilpus[1]
+                _value:=xl_mpb_value
+            else
+                _value:=0.0 //flag reversal
+            // else
+
+                    // _value:=0.25
+                // else
+                    // _value:=0
+    //# check to see if dmi+ is trending down and dmi- is trending up
+    // if dmilpus < dmilpus[1] and dmineg > dmineg[1]
+        //plot(1,color = color.green)
+        else
+            _value:=l_mpb_value
+        // if  prior_obv> obv and prior_obv/obv*100 < obv_percent
+            // value:=0.5
+
+
+    //case for rapid changes pointing to reversal
+        if dmilpus[1]-dmilpus > dmi_rapid
+            _value:=0
+    // if dmilpus
+    // if dmilpus-dmineg <= dmi_delta
+        // value:=0
+    // if dmilpus-dmineg < input(15, "DMI Delta")
+    //     value:=0.5
+    // else
+    //     value := 0.5
+    // []
+    if dmineg >= dmilpus and dmineg >= _dmineg
+        if dmineg-dmilpus > dmi_delta
+            if dmineg > dmineg[2]
+                _value:=xl_mpb_value*-1
+            else
+                // if (dmineg+dmineg[1]+dmineg[2]) / 3 > dmineg
+                //     _value:=-0.25
+                // else
+                _value:=0
+        // if adx > prior_adx
+        else
+            _value:=l_mpb_value*-1
+            // if  rsi >= input(60, "RSI High")
+                // line.new(bar_index, close, bar_index, close + 1, xloc.bar_index, extend.both, color.red)
+            // else
+            //     value := -0.5
+        if dmineg[1]-dmineg > dmi_rapid
+            _value:=0
+    [_value]
