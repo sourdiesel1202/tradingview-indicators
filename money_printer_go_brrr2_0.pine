@@ -1,0 +1,48 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sourdiesel1202
+// indicator("Money Printer Go BRRRRRR")
+// import sourdiesel1202/MPB2_0/1 as mpb
+import sourdiesel1202/MPB2_0/6 as mpb
+//@version=5
+indicator("Money Printer Go BRRR 2.0")
+[long_sma_value] = mpb.validate_sma("LONG")
+// [long_adx_value] = mpb.validate_adx()
+[long_macd_value] = mpb.validate_macd("LONG")
+[long_rsi_value] = mpb.validate_rsi("LONG")
+[long_dmi_value] = mpb.validate_dmi("LONG")
+
+[adx_value] = mpb.validate_adx()
+
+[short_sma_value] = mpb.validate_sma("SHORT")
+
+[short_macd_value] = mpb.validate_macd("SHORT")
+[short_rsi_value] = mpb.validate_rsi("SHORT")
+[short_dmi_value] = mpb.validate_dmi("SHORT")
+
+plotchar(long_sma_value, "Long SMA Value", "", location = location.top)
+plotchar(long_macd_value, "Long MACD Value", "", location = location.top)
+plotchar(long_rsi_value, "Long RSI Value", "", location = location.top)
+plotchar(long_dmi_value, "Long DMI Value", "", location = location.top)
+plotchar(short_sma_value, "Short SMA  Value", "", location = location.top)
+plotchar(short_macd_value, "Short MACD Value", "", location = location.top)
+plotchar(short_rsi_value, "Short RSI Value", "", location = location.top)
+plotchar(short_dmi_value, "Short DMI Value", "", location = location.top)
+plotchar(adx_value, "ADX Value", "", location = location.top)
+
+short_value = 0
+long_value = 0
+if short_dmi_value and short_macd_value and short_rsi_value and short_sma_value //and adx_value
+    short_value := -1
+else
+    short_value := 0
+
+if long_dmi_value and long_macd_value and long_rsi_value and long_sma_value //and adx_value
+    long_value := 1
+else
+    long_value := 0
+// if long_sma_value
+//     _value := 1
+// else
+    // _value :=-1
+plot(short_value, color = color.red)
+plot(long_value, color = color.green)

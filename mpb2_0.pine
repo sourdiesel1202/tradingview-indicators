@@ -1,0 +1,99 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sourdiesel1202
+
+//@version=5
+
+// @description TODO: add library description here
+library("MPB2_0")
+short_position_type = "SHORT"
+long_position_type = "LONG"
+// sma_length = input(10, "SMA Length")
+// @function TODO: add function description here
+// @param x TODO: add parameter x description here
+// @returns TODO: add what function returns
+
+// def validate_sma(position_type, ticker, ticker_history, indicator_data, module_config):
+//     if module_config['logging']:
+//         print(f"{datetime.datetime.now()}:{ticker}: {timestamp_to_datetime(ticker_history[-1].timestamp).strftime('%Y-%m-%d %H:%M:%S')}: Close: {ticker_history[-1].close} SMA: {indicator_data[ticker_history[-1].timestamp]}")
+//     if position_type == PositionType.LONG:
+//         return (ticker_history[-1].close > indicator_data[ticker_history[-1].timestamp] and ticker_history[-1].low > indicator_data[ticker_history[-1].timestamp] and ticker_history[-1].close > ticker_history[-1].open)
+
+//     else:
+//         return (ticker_history[-1].close < indicator_data[ticker_history[-1].timestamp] and ticker_history[-1].high < indicator_data[ticker_history[-1].timestamp] and ticker_history[-1].close < ticker_history[-1].open)
+
+export validate_sma(string position_type) =>
+	_value=false
+
+	sma = ta.sma(close,10)
+
+	if position_type == long_position_type
+		_value := close > sma and low > sma and close > open
+
+	else
+		_value := close < sma and high < sma and close < open
+
+	[_value]
+	//TODO : add function body and return value here
+	// x
+
+
+// def validate_macd(position_type, ticker, ticker_history, indicator_data, module_config):
+//     if module_config['logging']:
+//         print(f"{datetime.datetime.now()}:{ticker}: {timestamp_to_datetime(ticker_history[-1].timestamp).strftime('%Y-%m-%d %H:%M:%S')}: Close: {ticker_history[-1].close} MACD: {indicator_data['macd'][ticker_history[-1].timestamp]} Signal: {indicator_data['signal'][ticker_history[-1].timestamp]}")
+//     if position_type == PositionType.LONG:
+//         return indicator_data['macd'][ticker_history[-1].timestamp] > indicator_data['signal'][ticker_history[-1].timestamp]
+//     else:
+//         return indicator_data['macd'][ticker_history[-1].timestamp] < indicator_data['signal'][ticker_history[-1].timestamp]
+
+
+export validate_macd(string position_type) =>
+	slowlength = 26
+    fastLength = 12
+    MACDLength = 9
+    fast_ma = ta.ema(close, fastLength)
+    slow_ma = ta.ema(close, slowlength)
+    macd = fast_ma - slow_ma
+	signal = ta.ema(macd, MACDLength)
+	_value = false
+	if position_type == long_position_type
+		_value := macd > signal
+	else
+		_value := signal > macd
+	[_value]
+
+
+// def validate_adx(position_type, ticker, ticker_history, indicator_data, module_config):
+// if module_config['logging']:
+//     print(f"{datetime.datetime.now()}:{ticker}: {timestamp_to_datetime(ticker_history[-1].timestamp).strftime('%Y-%m-%d %H:%M:%S')}: Close: {ticker_history[-1].close} ADX[current]: {indicator_data['adx'][ticker_history[-1].timestamp]} ADX[previous]-: {indicator_data['adx'][ticker_history[-2].timestamp]} ")
+// return indicator_data['adx'][ticker_history[-1].timestamp] > module_config['adx_threshold'] and indicator_data['adx'][ticker_history[-1].timestamp] > indicator_data['adx'][ticker_history[-2].timestamp]
+export validate_rsi(string position_type) =>
+	// [dmilpus, dmineg, adx] = ta.dmi(14, 3)
+	rsi = ta.rsi(close, 14)
+	_value = false
+	if position_type == long_position_type
+		_value := rsi < 65
+	else
+		_value := rsi > 45
+	[_value]
+	// [ta.rsi(14) ] //we know trend is strong]
+export validate_adx() =>
+	[dmilpus, dmineg, adx] = ta.dmi(14, 3)
+
+	[adx > adx[2] and adx > 25] //we know trend is strong]
+
+// if module_config['logging']:
+// 	print(f"{datetime.datetime.now()}:{ticker}: {timestamp_to_datetime(ticker_history[-1].timestamp).strftime('%Y-%m-%d %H:%M:%S')}: Close: {ticker_history[-1].close} DMI+: {indicator_data['dmi+'][ticker_history[-1].timestamp]} DMI-: {indicator_data['dmi-'][ticker_history[-1].timestamp]} ADX: {indicator_data['adx'][ticker_history[-1].timestamp]}")
+// if position_type == PositionType.LONG:
+// 	return indicator_data['dmi+'][ticker_history[-1].timestamp] > indicator_data['dmi-'][ticker_history[-1].timestamp] and indicator_data['dmi+'][ticker_history[-1].timestamp] > module_config['adx_threshold'] and indicator_data['adx'][ticker_history[-1].timestamp] > module_config['adx_threshold'] and indicator_data['adx'][ticker_history[-1].timestamp] > indicator_data['adx'][ticker_history[-2].timestamp]
+// else:
+// 	return indicator_data['dmi+'][ticker_history[-1].timestamp] < indicator_data['dmi-'][ticker_history[-1].timestamp] and indicator_data['dmi-'][ticker_history[-1].timestamp] > module_config['adx_threshold'] and indicator_data['adx'][ticker_history[-1].timestamp] > module_config['adx_threshold'] and indicator_data['adx'][ticker_history[-1].timestamp] > indicator_data['adx'][ticker_history[-2].timestamp]
+
+export validate_dmi(string position_type) =>
+	_value = false
+	[dmilpus, dmineg, adx] = ta.dmi(14, 3)
+	if position_type == long_position_type
+
+		_value :=  dmilpus > dmineg and dmilpus > 20 and dmilpus > adx
+	else
+		_value :=  dmilpus < dmineg and dmineg > 20 and dmineg > adx
+	[_value]
